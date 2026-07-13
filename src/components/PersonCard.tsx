@@ -3,6 +3,7 @@
 import { User, Clapperboard, Tv, Heart } from 'lucide-react'
 import Link from 'next/link'
 import { GlassCard } from '@/components/GlassCard'
+import Image from 'next/image'
 
 import { usePersonFavorites } from '@/hooks/usePersonFavorites'
 
@@ -44,11 +45,12 @@ export function PersonCard({ person, href, onClick }: PersonCardProps) {
             {/* Profile Image */}
             <div className="relative aspect-[2/3] overflow-hidden bg-bg-secondary">
                 {person.profileUrl ? (
-                    <img
+                    <Image
                         src={person.profileUrl}
                         alt={person.name}
+                        fill
+                        sizes="(max-width: 640px) 150px, (max-width: 768px) 170px, 200px"
                         className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
-                        loading="lazy"
                     />
                 ) : (
                     <div

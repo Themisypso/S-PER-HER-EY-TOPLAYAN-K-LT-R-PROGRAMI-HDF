@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { Navbar } from '@/components/Navbar'
 import { Users, Loader2, Copy, Check, Film, Tv, Sparkles } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import toast from 'react-hot-toast'
 
 interface MatchData {
@@ -114,13 +115,16 @@ export default function SharedLibraryRoom() {
                         <p className="text-sm text-text-muted mb-2 font-medium">Participants</p>
                         <div className="flex -space-x-3 overflow-hidden p-1">
                             {data.session.participants.map(p => (
-                                <img
-                                    key={p.id}
-                                    src={p.user.image || `https://ui-avatars.com/api/?name=${p.user.name || p.user.username}&background=random`}
-                                    alt={p.user.name || ''}
-                                    className="w-10 h-10 rounded-full border-2 border-bg-card object-cover"
-                                    title={p.user.name || p.user.username || ''}
-                                />
+                                <div key={p.id} className="relative w-10 h-10 shrink-0 border-2 border-bg-card rounded-full overflow-hidden">
+                                    <Image
+                                        src={p.user.image || `https://ui-avatars.com/api/?name=${p.user.name || p.user.username}&background=random`}
+                                        alt={p.user.name || ''}
+                                        fill
+                                        sizes="40px"
+                                        className="object-cover"
+                                        title={p.user.name || p.user.username || ''}
+                                    />
+                                </div>
                             ))}
                         </div>
                     </div>
@@ -145,7 +149,7 @@ export default function SharedLibraryRoom() {
                             </h2>
                             {data.matches.planToWatch.length === 0 ? (
                                 <p className="text-text-muted bg-bg-secondary/30 p-4 rounded-xl border border-border text-center">
-                                    No mutual "Plan to Watch" items found.
+                                    No mutual &quot;Plan to Watch&quot; items found.
                                 </p>
                             ) : (
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -153,7 +157,13 @@ export default function SharedLibraryRoom() {
                                         <Link key={item.id} href={`/media/${item.tmdbId}?type=${item.type.toLowerCase()}`} className="glass-card group flex flex-col rounded-xl overflow-hidden border border-border hover:border-accent-pink transition-colors">
                                             <div className="aspect-[2/3] w-full bg-bg-secondary relative">
                                                 {item.posterUrl ? (
-                                                    <img src={item.posterUrl} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                                    <Image 
+                                                        src={item.posterUrl} 
+                                                        alt={item.title} 
+                                                        fill
+                                                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw"
+                                                        className="object-cover group-hover:scale-105 transition-transform duration-300" 
+                                                    />
                                                 ) : (
                                                     <div className="flex items-center justify-center h-full p-4 text-center text-xs text-text-muted">{item.title}</div>
                                                 )}
@@ -184,9 +194,15 @@ export default function SharedLibraryRoom() {
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                                     {data.matches.exact.map(item => (
                                         <Link key={item.id} href={`/media/${item.tmdbId}?type=${item.type.toLowerCase()}`} className="glass-card group flex flex-col rounded-xl overflow-hidden border border-border hover:border-accent-cyan transition-colors">
-                                            <div className="aspect-[2/3] w-full bg-bg-secondary overflow-hidden">
+                                            <div className="aspect-[2/3] w-full bg-bg-secondary overflow-hidden relative">
                                                 {item.posterUrl ? (
-                                                    <img src={item.posterUrl} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                                    <Image 
+                                                        src={item.posterUrl} 
+                                                        alt={item.title} 
+                                                        fill
+                                                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw"
+                                                        className="object-cover group-hover:scale-105 transition-transform duration-300" 
+                                                    />
                                                 ) : (
                                                     <div className="flex items-center justify-center h-full p-4 text-center text-xs text-text-muted">{item.title}</div>
                                                 )}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSession } from 'next-auth/react'
+import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Navbar } from '@/components/Navbar'
 import { PosterCard } from '@/components/PosterCard'
@@ -35,54 +36,61 @@ interface MediaItem {
     tmdbId?: string | null
     progress?: number | null
     pageCount?: number | null
+    mediaId?: string | null
 }
-
-const TABS = [
-    { key: 'ALL', label: 'All', icon: <LayoutGrid size={14} /> },
-    { key: 'ANIME', label: 'Anime', icon: <Tv size={14} /> },
-    { key: 'MOVIE', label: 'Movies', icon: <Film size={14} /> },
-    { key: 'TVSHOW', label: 'TV Shows', icon: <Tv size={14} /> },
-    { key: 'GAME', label: 'Games', icon: <Gamepad2 size={14} /> },
-    { key: 'BOOK', label: 'Books', icon: <BookOpen size={14} /> },
-    { key: 'PEOPLE', label: 'People', icon: <Users size={14} /> },
-] as const
-
-type TabKey = typeof TABS[number]['key']
-
-const MEDIA_TYPES = [
-    { key: 'ANIME', label: 'Anime', color: '#ff9500', icon: <Tv size={16} /> },
-    { key: 'MOVIE', label: 'Movies', color: '#00d4ff', icon: <Film size={16} /> },
-    { key: 'TVSHOW', label: 'TV Shows', color: '#a78bfa', icon: <Tv size={16} /> },
-    { key: 'GAME', label: 'Games', color: '#00ff9d', icon: <Gamepad2 size={16} /> },
-    { key: 'BOOK', label: 'Books', color: '#ff6b9d', icon: <BookOpen size={16} /> },
-]
-
-const STATUS_PILLS = [
-    { key: 'ALL', label: 'All', color: '#e8edf5', icon: <LayoutGrid size={12} /> },
-    { key: 'WATCHING', label: 'In Progress', color: '#00d4ff', icon: <Eye size={12} /> },
-    { key: 'COMPLETED', label: 'Completed', color: '#00ff9d', icon: <CheckCircle size={12} /> },
-    { key: 'PLANNED', label: 'Planned', color: '#a78bfa', icon: <Clock size={12} /> },
-    { key: 'DROPPED', label: 'Dropped', color: '#ff2d7a', icon: <XCircle size={12} /> },
-]
 
 const tabColor: Record<string, string> = {
     ALL: '#e8edf5', ANIME: '#ff9500', MOVIE: '#00d4ff', TVSHOW: '#a78bfa',
     GAME: '#00ff9d', BOOK: '#ff6b9d', PEOPLE: '#7b2fff',
 }
 
+function getTabs(t: any) {
+    return [
+        { key: 'ALL', label: t('tabs.ALL'), icon: <LayoutGrid size={14} /> },
+        { key: 'ANIME', label: t('tabs.ANIME'), icon: <Tv size={14} /> },
+        { key: 'MOVIE', label: t('tabs.MOVIE'), icon: <Film size={14} /> },
+        { key: 'TVSHOW', label: t('tabs.TVSHOW'), icon: <Tv size={14} /> },
+        { key: 'GAME', label: t('tabs.GAME'), icon: <Gamepad2 size={14} /> },
+        { key: 'BOOK', label: t('tabs.BOOK'), icon: <BookOpen size={14} /> },
+        { key: 'PEOPLE', label: t('tabs.PEOPLE'), icon: <Users size={14} /> },
+    ] as const;
+}
+
+function getMediaTypes(t: any) {
+    return [
+        { key: 'ANIME', label: t('tabs.ANIME'), color: '#ff9500', icon: <Tv size={16} /> },
+        { key: 'MOVIE', label: t('tabs.MOVIE'), color: '#00d4ff', icon: <Film size={16} /> },
+        { key: 'TVSHOW', label: t('tabs.TVSHOW'), color: '#a78bfa', icon: <Tv size={16} /> },
+        { key: 'GAME', label: t('tabs.GAME'), color: '#00ff9d', icon: <Gamepad2 size={16} /> },
+        { key: 'BOOK', label: t('tabs.BOOK'), color: '#ff6b9d', icon: <BookOpen size={16} /> },
+    ];
+}
+
+function getStatusPills(t: any) {
+    return [
+        { key: 'ALL', label: t('status.ALL'), color: '#e8edf5', icon: <LayoutGrid size={12} /> },
+        { key: 'WATCHING', label: t('status.WATCHING'), color: '#00d4ff', icon: <Eye size={12} /> },
+        { key: 'COMPLETED', label: t('status.COMPLETED'), color: '#00ff9d', icon: <CheckCircle size={12} /> },
+        { key: 'PLANNED', label: t('status.PLANNED'), color: '#a78bfa', icon: <Clock size={12} /> },
+        { key: 'DROPPED', label: t('status.DROPPED'), color: '#ff2d7a', icon: <XCircle size={12} /> },
+    ];
+}
+
+import { EmptyState } from '@/components/EmptyState'
+import { LoadingState } from '@/components/LoadingState'
+
+import { useTranslations } from 'next-intl'
+
 export default function LibraryPage() {
     return (
-        <Suspense fallback={
-            <div className="min-h-screen cyber-bg flex items-center justify-center">
-                <Loader2 className="animate-spin text-accent-cyan" size={32} />
-            </div>
-        }>
+        <Suspense fallback={<LoadingState message="Loading Library..." fullScreen />}>
             <LibraryContent />
         </Suspense>
     )
 }
 
 function LibraryContent() {
+    const t = useTranslations('Library')
     const { data: session, status: sessionStatus } = useSession()
     const router = useRouter()
     const searchParams = useSearchParams()
@@ -93,9 +101,13 @@ function LibraryContent() {
     const [hasMore, setHasMore] = useState(false)
     const [nextCursor, setNextCursor] = useState<string | null>(null)
 
-    const initialTab = (searchParams.get('tab') as TabKey) || 'ALL'
-    const [activeTab, setActiveTab] = useState<TabKey>(
-        TABS.some(t => t.key === initialTab) ? initialTab : 'ALL'
+    const TABS = getTabs(t)
+    const MEDIA_TYPES = getMediaTypes(t)
+    const STATUS_PILLS = getStatusPills(t)
+
+    const initialTab = (searchParams.get('tab') as string) || 'ALL'
+    const [activeTab, setActiveTab] = useState<string>(
+        TABS.some((tab: any) => tab.key === initialTab) ? initialTab : 'ALL'
     )
     const [statusFilter, setStatusFilter] = useState('ALL')
     const [searchQuery, setSearchQuery] = useState('')
@@ -125,12 +137,13 @@ function LibraryContent() {
 
     useEffect(() => {
         if (session) {
-            fetch('/api/media?limit=200')
+            fetch('/api/media?limit=1000')
                 .then(res => res.json())
                 .then(data => {
-                    setItems(data.items || [])
-                    setHasMore(data.hasMore ?? false)
-                    setNextCursor(data.nextCursor ?? null)
+                    const payload = data.data || {}
+                    setItems(payload.items || [])
+                    setHasMore(payload.hasMore ?? false)
+                    setNextCursor(payload.nextCursor ?? null)
                     setLoading(false)
                 })
         }
@@ -142,9 +155,10 @@ function LibraryContent() {
         try {
             const res = await fetch(`/api/media?limit=100&cursor=${nextCursor}`)
             const data = await res.json()
-            setItems(prev => [...prev, ...(data.items || [])])
-            setHasMore(data.hasMore ?? false)
-            setNextCursor(data.nextCursor ?? null)
+            const payload = data.data || {}
+            setItems(prev => [...prev, ...(payload.items || [])])
+            setHasMore(payload.hasMore ?? false)
+            setNextCursor(payload.nextCursor ?? null)
         } catch { }
         setLoadingMore(false)
     }
@@ -239,11 +253,11 @@ function LibraryContent() {
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
                     <div>
-                        <h1 className="text-3xl font-display font-bold text-[#e8edf5]">Your Library</h1>
+                        <h1 className="text-3xl font-display font-bold text-[#e8edf5]">{t('title')}</h1>
                         <p className="text-sm text-[#8899aa] mt-1">
                             {isPeopleTab
-                                ? `${people.length} favorites`
-                                : `${filteredItems.length} items`}
+                                ? t('favorites_count', { count: people.length })
+                                : t('items_count', { count: filteredItems.length })}
                         </p>
                     </div>
 
@@ -254,13 +268,13 @@ function LibraryContent() {
                                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#4a5568]" />
                                 <input
                                     type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                                    placeholder="Filter titles..." className="input-cyber pl-8 py-1.5 text-sm w-full md:w-48"
+                                    placeholder={t('filter_titles')} className="input-cyber pl-8 py-1.5 text-sm w-full md:w-48"
                                 />
                             </div>
                             <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="input-cyber py-1.5 text-sm cursor-pointer">
-                                <option value="createdAt">Date added</option>
-                                <option value="rating">Highest rated</option>
-                                <option value="title">Alphabetical</option>
+                                <option value="createdAt">{t('sort.createdAt')}</option>
+                                <option value="rating">{t('sort.rating')}</option>
+                                <option value="title">{t('sort.title')}</option>
                             </select>
                         </div>
                     )}
@@ -335,7 +349,7 @@ function LibraryContent() {
                 {/* ── ALL TAB: Type Breakdown Matrix ────────────────────────────────── */}
                 {activeTab === 'ALL' && !searchQuery && statusFilter === 'ALL' && !loading && (
                     <div className="mb-8">
-                        <h3 className="text-xs uppercase tracking-widest font-bold text-text-muted mb-3">Library Overview</h3>
+                        <h3 className="text-xs uppercase tracking-widest font-bold text-text-muted mb-3">{t('overview')}</h3>
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                             {typeBreakdown.filter(t => t.total > 0).map(mt => {
                                 const isExpanded = expandedType === mt.key
@@ -363,8 +377,14 @@ function LibraryContent() {
                                         {mt.topPosters.length > 0 && (
                                             <div className="flex gap-1 px-2 pb-2">
                                                 {mt.topPosters.map((url, i) => (
-                                                    <div key={i} className="flex-1 aspect-[2/3] rounded overflow-hidden bg-bg-secondary">
-                                                        <img src={url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                                                    <div key={i} className="flex-1 aspect-[2/3] rounded overflow-hidden bg-bg-secondary relative">
+                                                        <Image 
+                                                            src={url} 
+                                                            alt="" 
+                                                            fill 
+                                                            sizes="40px"
+                                                            className="object-cover" 
+                                                        />
                                                     </div>
                                                 ))}
                                             </div>
@@ -374,16 +394,16 @@ function LibraryContent() {
                                         {isExpanded && (
                                             <div className="divide-y divide-border/40 border-t border-border/40">
                                                 {[
-                                                    { key: 'WATCHING', label: 'In Progress', count: mt.watching, color: '#00d4ff' },
-                                                    { key: 'COMPLETED', label: 'Completed', count: mt.completed, color: '#00ff9d' },
-                                                    { key: 'PLANNED', label: 'Planned', count: mt.planned, color: '#a78bfa' },
-                                                    { key: 'DROPPED', label: 'Dropped', count: mt.dropped, color: '#ff2d7a' },
+                                                    { key: 'WATCHING', label: t('status.WATCHING'), count: mt.watching, color: '#00d4ff' },
+                                                    { key: 'COMPLETED', label: t('status.COMPLETED'), count: mt.completed, color: '#00ff9d' },
+                                                    { key: 'PLANNED', label: t('status.PLANNED'), count: mt.planned, color: '#a78bfa' },
+                                                    { key: 'DROPPED', label: t('status.DROPPED'), count: mt.dropped, color: '#ff2d7a' },
                                                 ].map(s => (
                                                     <button
                                                         key={s.key}
                                                         disabled={s.count === 0}
                                                         onClick={() => {
-                                                            setActiveTab(mt.key as TabKey)
+                                                            setActiveTab(mt.key)
                                                             setStatusFilter(s.key)
                                                             setExpandedType(null)
                                                         }}
@@ -409,7 +429,7 @@ function LibraryContent() {
                         <div>
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-sm font-bold text-text-secondary uppercase tracking-wider flex items-center gap-2">
-                                    <Users size={14} /> My Favorites
+                                    <Users size={14} /> {t('my_favorites')}
                                     {people.length > 0 && (
                                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#7b2fff]/20 text-[#7b2fff]">{people.length}</span>
                                     )}
@@ -417,7 +437,7 @@ function LibraryContent() {
                                 {people.length > PEOPLE_DEFAULT_COUNT && (
                                     <button onClick={() => setShowAllFavorites(v => !v)}
                                         className="text-xs text-text-muted hover:text-accent-cyan transition-colors">
-                                        {showAllFavorites ? 'Show Less' : `Show All (${people.length})`}
+                                        {showAllFavorites ? t('show_less') : t('show_all', { count: people.length })}
                                     </button>
                                 )}
                             </div>
@@ -438,7 +458,7 @@ function LibraryContent() {
                             ) : (
                                 <div className="text-center py-10 glass-card rounded-2xl border border-border">
                                     <Users size={36} className="text-[#4a5568] mx-auto mb-3" />
-                                    <p className="text-sm text-[#8899aa]">Browse the <a href="/people" className="text-[#7b2fff] hover:underline">People</a> page and click ♥ to add favorites.</p>
+                                    <p className="text-sm text-[#8899aa]">{t('browse_people')}</p>
                                 </div>
                             )}
                         </div>
@@ -447,12 +467,12 @@ function LibraryContent() {
                         <div>
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-sm font-bold text-text-secondary uppercase tracking-wider flex items-center gap-2">
-                                    <span style={{ color: '#00d4ff' }}>🎭</span> Popular Actors
+                                    <span style={{ color: '#00d4ff' }}>🎭</span> {t('popular_actors')}
                                 </h3>
                                 {popularActors.length > PEOPLE_DEFAULT_COUNT && (
                                     <button onClick={() => setShowAllActors(v => !v)}
                                         className="text-xs text-text-muted hover:text-accent-cyan transition-colors">
-                                        {showAllActors ? 'Show Less' : `Show All (${popularActors.length})`}
+                                        {showAllActors ? t('show_less') : t('show_all', { count: popularActors.length })}
                                     </button>
                                 )}
                             </div>
@@ -471,7 +491,7 @@ function LibraryContent() {
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-sm text-text-muted">No actors loaded.</p>
+                                <p className="text-sm text-text-muted">{t('no_actors')}</p>
                             )}
                         </div>
 
@@ -479,12 +499,12 @@ function LibraryContent() {
                         <div>
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-sm font-bold text-text-secondary uppercase tracking-wider flex items-center gap-2">
-                                    <span style={{ color: '#7b2fff' }}>🎬</span> Popular Directors
+                                    <span style={{ color: '#7b2fff' }}>🎬</span> {t('popular_directors')}
                                 </h3>
                                 {popularDirectors.length > PEOPLE_DEFAULT_COUNT && (
                                     <button onClick={() => setShowAllDirectors(v => !v)}
                                         className="text-xs text-text-muted hover:text-[#7b2fff] transition-colors">
-                                        {showAllDirectors ? 'Show Less' : `Show All (${popularDirectors.length})`}
+                                        {showAllDirectors ? t('show_less') : t('show_all', { count: popularDirectors.length })}
                                     </button>
                                 )}
                             </div>
@@ -503,7 +523,7 @@ function LibraryContent() {
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-sm text-text-muted">No directors loaded.</p>
+                                <p className="text-sm text-text-muted">{t('no_directors')}</p>
                             )}
                         </div>
                     </div>
@@ -539,17 +559,17 @@ function LibraryContent() {
                                     disabled={loadingMore}
                                     className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold border border-border text-text-secondary hover:text-text-primary hover:border-accent-cyan transition-all disabled:opacity-50"
                                 >
-                                    {loadingMore ? <><Loader2 size={16} className="animate-spin" /> Loading...</> : 'Load More'}
+                                    {loadingMore ? <><Loader2 size={16} className="animate-spin" /> {t('loading')}</> : t('load_more')}
                                 </button>
                             </div>
                         )}
                     </>
                 ) : (
-                    <div className="text-center py-20 glass-card">
-                        <LayoutGrid size={48} className="text-[#4a5568] mx-auto mb-4" />
-                        <h3 className="font-display text-lg font-semibold text-[#e8edf5] mb-2">No items found</h3>
-                        <p className="text-[#8899aa] text-sm">Update your filters or add some new titles.</p>
-                    </div>
+                    <EmptyState 
+                        title={t('no_items')} 
+                        description={t('update_filters')}
+                        icon={LayoutGrid}
+                    />
                 )}
             </main>
 

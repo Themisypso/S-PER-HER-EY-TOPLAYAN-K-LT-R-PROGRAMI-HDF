@@ -1,0 +1,33 @@
+{
+  "Navbar": {
+    "dashboard": "Dashboard",
+    "explore": "Entdecken",
+    "library": "Bibliothek",
+    "trending": "Im Trend",
+    "global_search": "Suchen...",
+    "login": "Anmelden",
+    "register": "Registrieren",
+    "my_profile": "Mein Profil",
+    "settings": "Einstellungen",
+    "manage_friends": "Freunde",
+    "admin_panel": "Admin-Bereich",
+    "logout": "Abmelden"
+  },
+  "Dashboard": {
+    "title": "Dashboard",
+    "welcome": "Willkommen",
+    "total_time": "Gesamtzeit",
+    "watching": "Aktuell",
+    "planned": "Geplant",
+    "completed": "Abgeschlossen",
+    "recently_watched": "Zuletzt gesehen",
+    "activity_feed": "Aktivitätsfeed"
+  },
+  "Settings": {
+    "title": "Profileinstellungen",
+    "subtitle": "Verwalten Sie Ihr öffentliches Profil, Verbindungen und Datenschutzeinstellungen im Netzwerk.",
+    "general": "Allgemein",
+    "security": "Sicherheit",
+    "integrations": "Integrationen"
+  }
+}

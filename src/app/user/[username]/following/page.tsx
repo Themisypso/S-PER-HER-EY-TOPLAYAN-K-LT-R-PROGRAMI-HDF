@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { Navbar } from '@/components/Navbar'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Users } from 'lucide-react'
 
 export default async function FollowingPage({ params }: { params: { username: string } }) {
@@ -37,7 +38,15 @@ export default async function FollowingPage({ params }: { params: { username: st
                     {user.following.map(f => (
                         <Link key={f.following.id} href={`/user/${f.following.username || f.following.id}`} className="glass-card p-4 rounded-xl flex items-center gap-4 border border-border/50 hover:border-[#00d4ff] hover:-translate-y-0.5 transition-all">
                             {f.following.image ? (
-                                <img src={f.following.image} alt={f.following.name || ''} className="w-12 h-12 rounded-full object-cover border border-border" />
+                                <div className="relative w-12 h-12 shrink-0 overflow-hidden rounded-full border border-border">
+                                    <Image 
+                                        src={f.following.image} 
+                                        alt={f.following.name || ''} 
+                                        fill
+                                        sizes="48px"
+                                        className="object-cover" 
+                                    />
+                                </div>
                             ) : (
                                 <div className="w-12 h-12 rounded-full bg-bg-secondary border border-border flex items-center justify-center font-bold text-xl text-[#00d4ff]">
                                     {f.following.name?.[0]?.toUpperCase() || f.following.username?.[0]?.toUpperCase()}

@@ -60,7 +60,7 @@ export default function SharedLibraryHub() {
                         </div>
                         <h1 className="text-4xl font-display font-bold text-text-primary mb-4">Shared Library</h1>
                         <p className="text-text-secondary text-lg max-w-md mx-auto">
-                            Jump into a room with your friends to find out which movies and shows you've both watched or plan to watch.
+                            Jump into a room with your friends to find out which movies and shows you&apos;ve both watched or plan to watch.
                         </p>
                     </div>
 

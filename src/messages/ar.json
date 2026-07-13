@@ -1,0 +1,33 @@
+{
+  "Navbar": {
+    "dashboard": "لوحة القيادة",
+    "explore": "استكشف",
+    "library": "المكتبة",
+    "trending": "الشائع",
+    "global_search": "بحث...",
+    "login": "تسجيل الدخول",
+    "register": "إنشاء حساب",
+    "my_profile": "ملفي الشخصي",
+    "settings": "الإعدادات",
+    "manage_friends": "الأصدقاء",
+    "admin_panel": "لوحة الإدارة",
+    "logout": "تسجيل الخروج"
+  },
+  "Dashboard": {
+    "title": "لوحة القيادة",
+    "welcome": "مرحباً",
+    "total_time": "الوقت الإجمالي",
+    "watching": "أشاهد الآن",
+    "planned": "مخطط له",
+    "completed": "مكتمل",
+    "recently_watched": "شوهد مؤخراً",
+    "activity_feed": "سجل النشاطات"
+  },
+  "Settings": {
+    "title": "إعدادات الملف الشخصي",
+    "subtitle": "إدارة ملفك الشخصي العام والاتصالات وتفضيلات الخصوصية على الشبكة.",
+    "general": "عام",
+    "security": "الأمان",
+    "integrations": "التكاملات"
+  }
+}

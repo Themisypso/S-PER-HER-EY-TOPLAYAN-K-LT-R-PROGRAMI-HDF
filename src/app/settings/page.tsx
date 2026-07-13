@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { Navbar } from '@/components/Navbar'
 import { SettingsForm } from '@/components/SettingsForm'
 import { prisma } from '@/lib/prisma'
+import { Suspense } from 'react'
 
 export default async function SettingsPage() {
     const session = await getServerSession(authOptions)
@@ -60,7 +61,9 @@ export default async function SettingsPage() {
                     </aside>
 
                     <div className="space-y-8">
-                        <SettingsForm initialSettings={settings} user={user} />
+                        <Suspense fallback={<div>Loading settings...</div>}>
+                            <SettingsForm initialSettings={settings as any} user={user as any} />
+                        </Suspense>
                     </div>
                 </div>
             </div>

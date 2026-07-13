@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Clapperboard, Mail, Lock, User, Loader2, Chrome, Gamepad2 } from 'lucide-react'
+import Image from 'next/image'
 import { signIn } from 'next-auth/react'
 import toast from 'react-hot-toast'
 import { ThemeSwitcher } from '@/components/ThemeSwitcher'
@@ -93,8 +94,13 @@ export default function RegisterPage() {
                             id="steam-register-btn"
                         >
                             {steamLoading ? <Loader2 size={16} className="animate-spin text-[#66c0f4]" /> : (
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Steam_icon_logo.svg/512px-Steam_icon_logo.svg.png"
-                                    alt="Steam" className="w-4 h-4 object-contain" />
+                                <Image 
+                                    src="/steam-logo.png" 
+                                    alt="Steam" 
+                                    width={16}
+                                    height={16}
+                                    className="object-contain" 
+                                />
                             )}
                             Steam
                         </button>

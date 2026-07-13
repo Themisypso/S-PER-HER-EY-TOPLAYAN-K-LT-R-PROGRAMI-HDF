@@ -5,7 +5,7 @@ import { authOptions } from '@/lib/auth'
 
 export async function GET(req: Request) {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) return NextResponse.json({ notifications: [] })
+    if (!session?.user?.id) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
 
     try {
         const notifications = await prisma.notification.findMany({
@@ -16,9 +16,9 @@ export async function GET(req: Request) {
                 actor: { select: { name: true, image: true, username: true } }
             }
         })
-        return NextResponse.json({ notifications })
+        return NextResponse.json({ success: true, data: { notifications } })
     } catch (e) {
         console.error("Notifications API Error", e)
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+        return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 })
     }
 }

@@ -69,11 +69,11 @@ export async function GET(req: Request) {
         const totalItems = data.totalItems || 0
         const hasMore = startIndex + maxResults < Math.min(totalItems, 400) // cap at 400
 
-        const response = { results, totalItems, hasMore }
+        const response = { success: true, data: { results, totalItems, hasMore } }
         cache.set(cacheKey, response)
         return NextResponse.json(response)
     } catch (err) {
         console.error('[BOOKS SEARCH ERROR]', err)
-        return NextResponse.json({ error: 'Failed to fetch books' }, { status: 500 })
+        return NextResponse.json({ success: false, error: 'Failed to fetch books' }, { status: 500 })
     }
 }

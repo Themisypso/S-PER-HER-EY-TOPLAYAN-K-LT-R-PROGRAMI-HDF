@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { buildProgressActivityContent, buildCompletionActivityContent } from '@/lib/utils/activity'
+import { MediaStatus } from '@prisma/client'
 
 // ─── Per-type discriminated schemas ──────────────────────────────────────────
 
@@ -143,9 +144,9 @@ export async function PATCH(req: Request) {
                 : existing.status
 
     // ─── DB update ────────────────────────────────────────────────────────────
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
         lastProgressAt: new Date(),
-        ...(newStatus !== existing.status ? { status: newStatus as any } : {}),
+        ...(newStatus !== existing.status ? { status: newStatus as MediaStatus } : {}),
     }
 
     if (data.type === 'GAME') {

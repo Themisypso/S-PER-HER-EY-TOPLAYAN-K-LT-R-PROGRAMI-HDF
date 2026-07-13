@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { BookOpen, Star, Loader2, Heart } from 'lucide-react'
 import { useMediaFavorites } from '@/hooks/useMediaFavorites'
 import { PosterContextMenu } from './PosterContextMenu'
@@ -32,7 +33,13 @@ function BookCard({ book }: { book: Book }) {
             <Link href={`/books/${book.volumeId}`} className="block flex-shrink-0">
                 <div className="relative w-16 h-24 rounded-md overflow-hidden bg-bg-secondary border border-border shadow-sm group-hover:border-[var(--accent-pink)]/40 transition-all">
                     {book.thumbnail ? (
-                        <img src={book.thumbnail} alt={book.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        <Image 
+                            src={book.thumbnail} 
+                            alt={book.title} 
+                            fill
+                            sizes="64px"
+                            className="object-cover group-hover:scale-105 transition-transform duration-300" 
+                        />
                     ) : (
                         <div className="flex items-center justify-center h-full">
                             <BookOpen size={20} className="text-text-muted opacity-40" />

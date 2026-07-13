@@ -4,7 +4,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { Send, MessageSquare, Heart, Reply, ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { formatDistanceToNow } from 'date-fns'
+import { useTranslations } from 'next-intl'
 
 interface Comment {
     id: string
@@ -50,6 +52,7 @@ function CommentBubble({
     const [likes, setLikes] = useState(comment._count?.likes || 0)
     const [hasLiked, setHasLiked] = useState((comment.likes?.length ?? 0) > 0)
     const [showReplies, setShowReplies] = useState(depth === 0)
+    const t = useTranslations('MediaDetail')
 
     const handleLike = async () => {
         if (!currentUserId) return
@@ -90,9 +93,15 @@ function CommentBubble({
 
     return (
         <div className={`flex gap-3 group ${depth > 0 ? 'ml-10 mt-3' : ''}`}>
-            <Link href={`/user/${comment.user.username}`} className="flex-shrink-0 mt-1">
+            <Link href={`/user/${comment.user.username}`} className="flex-shrink-0 mt-1 relative w-8 h-8">
                 {comment.user.image ? (
-                    <img src={comment.user.image} alt="" className="w-8 h-8 rounded-full object-cover ring-1 ring-border group-hover:ring-accent-pink/60 transition-all" />
+                    <Image 
+                        src={comment.user.image} 
+                        alt="" 
+                        fill
+                        sizes="32px"
+                        className="rounded-full object-cover ring-1 ring-border group-hover:ring-accent-pink/60 transition-all" 
+                    />
                 ) : (
                     <div className="w-8 h-8 rounded-full bg-bg-secondary flex items-center justify-center text-xs font-bold text-text-muted group-hover:ring-2 ring-accent-pink/50 transition-all">
                         {comment.user.name?.[0] || 'U'}
@@ -131,7 +140,7 @@ function CommentBubble({
                             className="flex items-center gap-1.5 text-xs text-text-muted hover:text-accent-cyan py-1 transition-colors"
                         >
                             <Reply size={13} />
-                            Reply
+                            {t('reply')}
                         </button>
                     )}
 
@@ -141,7 +150,7 @@ function CommentBubble({
                             className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text-primary py-1 transition-colors ml-auto"
                         >
                             {showReplies ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-                            {comment._count?.replies ?? comment.replies?.length} {showReplies ? 'Hide' : 'View'} replies
+                            {comment._count?.replies ?? comment.replies?.length} {showReplies ? t('hide_replies') : t('view_replies')}
                         </button>
                     )}
                 </div>
@@ -152,7 +161,7 @@ function CommentBubble({
                         <input
                             value={replyContent}
                             onChange={e => setReplyContent(e.target.value)}
-                            placeholder={`Reply to ${comment.user.name || comment.user.username}…`}
+                            placeholder={t('reply_to', { name: comment.user.name || comment.user.username })}
                             className="flex-1 bg-bg-secondary/50 border border-border rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-accent-cyan transition-colors"
                             autoFocus
                         />
@@ -193,6 +202,7 @@ export function MediaDiscussion({ tmdbId, title }: MediaDiscussionProps) {
     const [submitting, setSubmitting] = useState(false)
     const [nextCursor, setNextCursor] = useState<string | null>(null)
     const [loadingMore, setLoadingMore] = useState(false)
+    const t = useTranslations('MediaDetail')
 
     const fetchComments = useCallback(async (cursor?: string) => {
         const url = `/api/discussions/tmdb/${tmdbId}${cursor ? `?cursor=${cursor}` : ''}`
@@ -261,7 +271,7 @@ export function MediaDiscussion({ tmdbId, title }: MediaDiscussionProps) {
         <div className="glass-card p-6 md:p-8 rounded-2xl mt-12 bg-bg-card/80 backdrop-blur-xl">
             <h2 className="text-2xl font-display font-bold text-text-primary mb-6 flex items-center gap-3">
                 <MessageSquare size={24} className="text-accent-pink" />
-                Community Discussion
+                {t('community_discussion')}
                 <span className="text-sm font-normal text-text-muted">({comments.length}{nextCursor ? '+' : ''})</span>
             </h2>
 
@@ -274,8 +284,8 @@ export function MediaDiscussion({ tmdbId, title }: MediaDiscussionProps) {
                 <div className="space-y-5 mb-8">
                     {comments.length === 0 ? (
                         <div className="text-center py-10 border border-dashed border-border rounded-xl">
-                            <p className="text-text-muted italic">No one has started a discussion for {title} yet.</p>
-                            <p className="text-xs text-text-secondary mt-1">Be the first to share your thoughts!</p>
+                            <p className="text-text-muted italic">{t('no_discussion', { title })}</p>
+                            <p className="text-xs text-text-secondary mt-1">{t('be_first')}</p>
                         </div>
                     ) : (
                         comments.map((comment) => (
@@ -295,7 +305,7 @@ export function MediaDiscussion({ tmdbId, title }: MediaDiscussionProps) {
                             disabled={loadingMore}
                             className="w-full py-3 text-sm text-accent-cyan hover:text-accent-cyan/80 border border-border/50 hover:border-accent-cyan/40 rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                         >
-                            {loadingMore ? <><Loader2 size={14} className="animate-spin" /> Loading...</> : 'Load more comments'}
+                            {loadingMore ? <><Loader2 size={14} className="animate-spin" /> {t('loading')}</> : t('load_more_comments')}
                         </button>
                     )}
                 </div>
@@ -306,7 +316,7 @@ export function MediaDiscussion({ tmdbId, title }: MediaDiscussionProps) {
                     <textarea
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
-                        placeholder="Share your thoughts, theories, or reviews…"
+                        placeholder={t('share_thoughts')}
                         className="w-full bg-bg-secondary/50 border border-border rounded-xl p-4 pr-14 text-sm resize-none focus:outline-none focus:border-accent-pink focus:ring-1 focus:ring-accent-pink transition-all h-24"
                         disabled={submitting}
                         onKeyDown={e => {
@@ -327,7 +337,7 @@ export function MediaDiscussion({ tmdbId, title }: MediaDiscussionProps) {
             ) : (
                 <div className="bg-bg-secondary/30 border border-border rounded-xl p-4 text-center">
                     <p className="text-sm text-text-secondary">
-                        <Link href="/auth/login" className="text-accent-cyan font-bold hover:underline">Log in</Link> to join the discussion.
+                        <Link href="/auth/login" className="text-accent-cyan font-bold hover:underline">Log in</Link> {t('log_in_to_join')}
                     </p>
                 </div>
             )}

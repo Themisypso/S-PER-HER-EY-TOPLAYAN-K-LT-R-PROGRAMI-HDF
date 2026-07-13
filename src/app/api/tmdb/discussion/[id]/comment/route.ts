@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) return new NextResponse('Unauthorized', { status: 401 })
+    if (!session?.user?.id) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
 
     try {
         const tmdbId = params.id
@@ -13,7 +13,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         const { content } = body
 
         if (!content || !content.trim()) {
-            return new NextResponse('Content is required', { status: 400 })
+            return NextResponse.json({ success: false, error: 'Content is required' }, { status: 400 })
         }
 
         // Find or create the discussion thread
@@ -67,9 +67,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             })
         }
 
-        return NextResponse.json(comment)
+        return NextResponse.json({ success: true, data: comment })
     } catch (error) {
         console.error('[DISCUSSION_POST]', error)
-        return new NextResponse('Internal Error', { status: 500 })
+        return NextResponse.json({ success: false, error: 'Internal Error' }, { status: 500 })
     }
 }

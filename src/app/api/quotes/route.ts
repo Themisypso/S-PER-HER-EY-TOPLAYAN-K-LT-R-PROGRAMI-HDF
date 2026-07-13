@@ -6,13 +6,13 @@ import { authOptions } from '@/lib/auth'
 export async function POST(req: Request) {
     try {
         const session = await getServerSession(authOptions)
-        if (!session?.user?.id) return new NextResponse('Unauthorized', { status: 401 })
+        if (!session?.user?.id) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
 
         const body = await req.json()
         const { tmdbId, type, title, posterUrl, backdropUrl, releaseYear, content, reference, mediaUrl, attachmentType } = body
 
         if (!content || !tmdbId || !type || !title) {
-            return new NextResponse('Missing required fields', { status: 400 })
+            return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 })
         }
 
         const upperType = type.toUpperCase()
@@ -62,9 +62,9 @@ export async function POST(req: Request) {
             }
         })
 
-        return NextResponse.json(quote)
+        return NextResponse.json({ success: true, data: quote })
     } catch (error) {
         console.error('[POST_QUOTES]', error)
-        return new NextResponse('Internal Error', { status: 500 })
+        return NextResponse.json({ success: false, error: 'Internal Error' }, { status: 500 })
     }
 }

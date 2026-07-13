@@ -93,7 +93,7 @@ export default async function QuotesPage({ searchParams }: { searchParams: { fil
 
                 {quotes.length > 0 && (
                     <div className="text-center py-12 mt-8 border-t border-border/30">
-                        <p className="text-sm text-text-muted">You've reached the end of the feed.</p>
+                        <p className="text-sm text-text-muted">You&apos;ve reached the end of the feed.</p>
                     </div>
                 )}
             </main>

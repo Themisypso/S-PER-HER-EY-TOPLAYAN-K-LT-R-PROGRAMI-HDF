@@ -28,59 +28,100 @@ export async function POST(req: Request) {
 
         const ownedGames = data.response.games // array of { appid, name, playtime_forever, img_icon_url, ... }
 
-        // Fetch user's existing games from DB
         const existingGames = await prisma.mediaItem.findMany({
             where: { userId: session.user.id, type: 'GAME' }
         })
 
-        let updatedCount = 0
-
-        for (const sg of ownedGames) {
-            if (sg.playtime_forever <= 0) continue // skip games never played
-
-            const steamPlaytimeMinutes = sg.playtime_forever
-            const appidStr = String(sg.appid)
-
-            // Try to match by steamAppId OR exact title
-            let match = existingGames.find(g => g.steamAppId === appidStr || g.title.toLowerCase() === sg.name.toLowerCase())
-
-            if (match) {
-                // Update existing record
-                const newEffective = Math.max((match.playtimeHours ?? 0) * 60, steamPlaytimeMinutes)
-
-                await prisma.mediaItem.update({
-                    where: { id: match.id },
-                    data: {
-                        steamAppId: appidStr,
-                        steamPlaytimeMinutes,
-                        totalTimeMinutes: Math.round(newEffective),
-                    }
-                })
-                updatedCount++
-            } else {
-                // Create a new entry if they played it for more than 1 hour (avoids cluttering library with 5min tries)
-                if (steamPlaytimeMinutes >= 60) {
-                    const status = steamPlaytimeMinutes > 600 ? 'COMPLETED' : 'WATCHING' // >10 hours = default COMPLETED for simplicity
-
-                    // Note: Instead of storing progressPercent for Steam, we just let it track total time.
-                    await prisma.mediaItem.create({
-                        data: {
-                            userId: session.user.id,
-                            title: sg.name,
-                            type: 'GAME',
-                            status,
-                            steamAppId: appidStr,
-                            steamPlaytimeMinutes,
-                            totalTimeMinutes: steamPlaytimeMinutes, // since there's no manual time yet
-                            posterUrl: `https://steamcdn-a.akamaihd.net/steam/apps/${sg.appid}/header.jpg`
-                        }
-                    })
-                    updatedCount++
+        const encoder = new TextEncoder()
+        const stream = new ReadableStream({
+            async start(controller) {
+                const sendUpdate = (data: any) => {
+                    try { controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`)) } catch (e) {}
                 }
-            }
-        }
 
-        return NextResponse.json({ success: true, updatedCount }, { status: 200 })
+                let updatedCount = 0
+                let processed = 0
+                const validGames = ownedGames.filter((sg: any) => sg.playtime_forever >= 30)
+                const total = validGames.length
+
+                for (const sg of validGames) {
+                    const steamPlaytimeMinutes = sg.playtime_forever
+                    const appidStr = String(sg.appid)
+
+                    let match = existingGames.find(g => g.steamAppId === appidStr || g.title.toLowerCase() === sg.name.toLowerCase())
+
+                    let releaseYear = match?.releaseYear || null
+                    let rawgIdStr = match?.rawgId || null
+
+                    // If we don't have releaseYear, try to fetch from RAWG
+                    if (!releaseYear && process.env.RAWG_API_KEY) {
+                        try {
+                            const endpoint = `https://api.rawg.io/api/games?key=${process.env.RAWG_API_KEY}&search=${encodeURIComponent(sg.name)}&page_size=1`
+                            const rawgRes = await fetch(endpoint)
+                            if (rawgRes.ok) {
+                                const data = await rawgRes.json()
+                                if (data.results && data.results.length > 0) {
+                                    const bestMatch = data.results[0]
+                                    if (bestMatch.released) releaseYear = parseInt(bestMatch.released.split('-')[0])
+                                    if (bestMatch.id) rawgIdStr = String(bestMatch.id)
+                                }
+                            }
+                        } catch (e) {
+                            console.error('RAWG fetch error for', sg.name)
+                        }
+                    }
+
+                    if (match) {
+                        const newEffective = Math.max((match.playtimeHours ?? 0) * 60, steamPlaytimeMinutes)
+                        await prisma.mediaItem.update({
+                            where: { id: match.id },
+                            data: {
+                                steamAppId: appidStr,
+                                steamPlaytimeMinutes,
+                                totalTimeMinutes: Math.round(newEffective),
+                                posterUrl: `https://steamcdn-a.akamaihd.net/steam/apps/${sg.appid}/library_600x900_2x.jpg`,
+                                releaseYear: releaseYear,
+                                rawgId: rawgIdStr
+                            }
+                        })
+                        updatedCount++
+                    } else {
+                        const status = steamPlaytimeMinutes > 600 ? 'COMPLETED' : 'WATCHING'
+                        await prisma.mediaItem.create({
+                            data: {
+                                userId: session.user.id,
+                                title: sg.name,
+                                type: 'GAME',
+                                status,
+                                steamAppId: appidStr,
+                                steamPlaytimeMinutes,
+                                totalTimeMinutes: steamPlaytimeMinutes,
+                                posterUrl: `https://steamcdn-a.akamaihd.net/steam/apps/${sg.appid}/library_600x900_2x.jpg`,
+                                releaseYear: releaseYear,
+                                rawgId: rawgIdStr
+                            }
+                        })
+                        updatedCount++
+                    }
+
+                    processed++
+                    if (processed % 5 === 0 || processed === total) {
+                        sendUpdate({ progress: Math.round((processed / total) * 100), processed, updatedCount, total })
+                    }
+                }
+
+                sendUpdate({ done: true, updatedCount, processed, total })
+                controller.close()
+            }
+        })
+
+        return new Response(stream, {
+            headers: {
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+            }
+        })
     } catch (e: any) {
         console.error('[STEAM SYNC]', e)
         return NextResponse.json({ error: e.message || 'Internal sync error' }, { status: 500 })

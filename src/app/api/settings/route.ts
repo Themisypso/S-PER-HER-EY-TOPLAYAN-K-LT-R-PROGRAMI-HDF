@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import * as api from '@/lib/api'
 
 const settingsSchema = z.object({
     name: z.string().min(2).optional(),
@@ -20,7 +21,7 @@ const settingsSchema = z.object({
 
 export async function GET(_req: Request) {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session?.user?.id) return api.unauthorized()
 
     try {
         let settings = await prisma.userSettings.findUnique({
@@ -33,16 +34,16 @@ export async function GET(_req: Request) {
             })
         }
 
-        return NextResponse.json({ settings })
+        return api.ok({ settings })
     } catch (e) {
         console.error('[SETTINGS GET]', e)
-        return NextResponse.json({ error: 'Failed to fetch settings' }, { status: 500 })
+        return api.serverError('Failed to fetch settings')
     }
 }
 
 export async function PATCH(req: Request) {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session?.user?.id) return api.unauthorized()
 
     try {
         const body = await req.json()
@@ -61,12 +62,12 @@ export async function PATCH(req: Request) {
             })] : [])
         ])
 
-        return NextResponse.json({ settings: updatedSettings })
+        return api.ok({ settings: updatedSettings })
     } catch (e) {
         if (e instanceof z.ZodError) {
-            return NextResponse.json({ error: e.errors[0].message }, { status: 400 })
+            return api.badRequest(e.errors[0].message)
         }
         console.error('[SETTINGS PATCH]', e)
-        return NextResponse.json({ error: 'Failed to update settings' }, { status: 500 })
+        return api.serverError('Failed to update settings')
     }
 }

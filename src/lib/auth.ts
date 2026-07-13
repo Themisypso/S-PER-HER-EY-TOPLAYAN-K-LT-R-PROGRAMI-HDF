@@ -112,9 +112,9 @@ export const authOptions: NextAuthOptions = {
                 token.role = user.role
                 token.image = user.image
                 token.name = user.name
-                token.username = (user as any).username
+                token.username = user.username
                 // Mark if this is a new Google user with no username
-                token.needsUsername = !(user as any).username
+                token.needsUsername = !user.username
             }
             if (trigger === 'update' && session?.image) {
                 token.image = session.image
@@ -134,8 +134,8 @@ export const authOptions: NextAuthOptions = {
                 session.user.role = token.role as string
                 session.user.image = token.image as string | undefined
                 session.user.name = token.name as string | undefined
-                    ; (session.user as any).username = token.username as string | undefined
-                    ; (session.user as any).needsUsername = token.needsUsername as boolean | undefined
+                session.user.username = token.username as string | undefined
+                session.user.needsUsername = token.needsUsername as boolean | undefined
             }
             return session
         },

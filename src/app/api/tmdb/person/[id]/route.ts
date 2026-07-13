@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
+import { getTmdbLang } from '@/lib/tmdb-lang'
 import { LRUCache } from 'lru-cache'
 
 const TMDB_BASE = 'https://api.themoviedb.org/3'
@@ -11,8 +12,10 @@ export async function GET(
     req: Request,
     { params }: { params: { id: string } }
 ) {
+    const tmdbLang = getTmdbLang();
+
     const personId = params.id
-    const cacheKey = `person:${personId}`
+    const cacheKey = `person:${personId}:${tmdbLang}`
 
     if (cache.has(cacheKey)) {
         return NextResponse.json(cache.get(cacheKey))
@@ -21,8 +24,8 @@ export async function GET(
     try {
         // Fetch person details + combined credits in parallel
         const [detailRes, creditsRes] = await Promise.all([
-            fetch(`${TMDB_BASE}/person/${personId}?api_key=${API_KEY}&language=en-US`),
-            fetch(`${TMDB_BASE}/person/${personId}/combined_credits?api_key=${API_KEY}&language=en-US`),
+            fetch(`${TMDB_BASE}/person/${personId}?api_key=${API_KEY}&language=${tmdbLang}`),
+            fetch(`${TMDB_BASE}/person/${personId}/combined_credits?api_key=${API_KEY}&language=${tmdbLang}`),
         ])
 
         if (!detailRes.ok) throw new Error(`TMDB error: ${detailRes.status}`)

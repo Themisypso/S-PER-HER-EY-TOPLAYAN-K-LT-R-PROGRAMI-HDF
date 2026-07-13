@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { translateWithCache } from '@/lib/translate'
+import { cookies } from 'next/headers'
 
 // GET /api/discussions/tmdb/[tmdbId] — get or init thread for a TMDB item
 export async function GET(req: Request, { params }: { params: { tmdbId: string } }) {
@@ -47,9 +49,52 @@ export async function GET(req: Request, { params }: { params: { tmdbId: string }
         const hasMore = comments.length > limit
         const data = hasMore ? comments.slice(0, limit) : comments
 
+        const locale = cookies().get('NEXT_LOCALE')?.value || 'en'
+
+        const translatedComments = await Promise.all(data.map(async (comment) => {
+            let translatedContent = comment.content;
+            let wasTranslated = false;
+            let detectedLang = comment.originalLang || 'auto';
+
+            if (comment.content && comment.originalLang && comment.originalLang !== locale && !comment.originalLang.startsWith(locale)) {
+                const res = await translateWithCache(comment.content, locale, comment.originalLang);
+                translatedContent = res.text;
+                wasTranslated = res.wasTranslated;
+                detectedLang = res.originalLang;
+            }
+
+            const translatedReplies = await Promise.all(comment.replies.map(async (reply) => {
+                let rContent = reply.content;
+                let rWasTranslated = false;
+                let rDetectedLang = reply.originalLang || 'auto';
+
+                if (reply.content && reply.originalLang && reply.originalLang !== locale && !reply.originalLang.startsWith(locale)) {
+                    const rRes = await translateWithCache(reply.content, locale, reply.originalLang);
+                    rContent = rRes.text;
+                    rWasTranslated = rRes.wasTranslated;
+                    rDetectedLang = rRes.originalLang;
+                }
+
+                return {
+                    ...reply,
+                    content: rContent,
+                    wasTranslated: rWasTranslated,
+                    detectedLang: rDetectedLang
+                };
+            }));
+
+            return {
+                ...comment,
+                content: translatedContent,
+                wasTranslated,
+                detectedLang,
+                replies: translatedReplies
+            };
+        }));
+
         return NextResponse.json({
             thread,
-            comments: data,
+            comments: translatedComments,
             nextCursor: hasMore ? data[data.length - 1]?.id : null
         })
     } catch (error) {

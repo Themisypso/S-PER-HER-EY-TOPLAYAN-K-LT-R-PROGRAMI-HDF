@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Heart, Layers } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
@@ -57,10 +58,12 @@ export function ListCard({ list, currentUserId }: ListCardProps) {
                                 style={{ zIndex: 10 - idx }}
                             >
                                 {item.posterUrl ? (
-                                    <img
+                                    <Image
                                         src={item.posterUrl}
                                         alt={item.title}
-                                        className="w-full h-full object-cover"
+                                        fill
+                                        sizes="112px"
+                                        className="object-cover"
                                     />
                                 ) : (
                                     <div className="w-full h-full bg-bg-primary flex items-center justify-center text-text-muted">
@@ -97,9 +100,17 @@ export function ListCard({ list, currentUserId }: ListCardProps) {
                 </div>
 
                 <div className="mt-auto pt-4 border-t border-border/30 flex items-center justify-between">
-                    <Link href={`/user/${list.user.username}`} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+                    <Link href={`/user/${list.user.username}`} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity relative">
                         {list.user.image ? (
-                            <img src={list.user.image} alt="" className="w-7 h-7 rounded-full object-cover shadow-sm border border-border/50" />
+                            <div className="relative w-7 h-7 shrink-0">
+                                <Image 
+                                    src={list.user.image} 
+                                    alt="" 
+                                    fill 
+                                    sizes="28px"
+                                    className="rounded-full object-cover shadow-sm border border-border/50" 
+                                />
+                            </div>
                         ) : (
                             <div className="w-7 h-7 rounded-full bg-accent-cyan/10 flex items-center justify-center text-[10px] font-bold text-accent-cyan uppercase ring-1 ring-accent-cyan/30">
                                 {list.user.name?.[0] || 'U'}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { User } from "@prisma/client";
+import Image from "next/image";
 import { Pencil, Trash2, Loader2, Users, X } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -138,8 +139,11 @@ export default function AdminUsersPage() {
                                     <td className="px-6 py-4">
                                         {user.steamId ? (
                                             <div className="flex items-center gap-1.5 text-accent-cyan bg-accent-cyan/10 px-2 py-1 rounded-md text-xs font-medium w-fit border border-accent-cyan/20">
-                                                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Steam_icon_logo.svg/512px-Steam_icon_logo.svg.png"
-                                                    alt="Steam" className="w-3 h-3 object-contain filter invert brightness-0" />
+                                                <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
+                                                    <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current text-[#66c0f4]">
+                                                        <path d="M11.979 0C5.353 0 0 5.373 0 12c0 4.148 2.11 7.822 5.32 10.02l3.206-4.634c-.16-.395-.24-.814-.24-1.258 0-1.898 1.543-3.441 3.442-3.441 1.09 0 2.052.513 2.686 1.31l4.582-6.52c.007-.11.02-.218.02-.328 0-3.313-2.696-6.01-6.01-6.01-3.315 0-6.01 2.697-6.01 6.01 0 .426.046.84.133 1.234l-3.36 4.856C1.488 15.65 0 13.916 0 12c0-6.627 5.373-12 12-12s12 5.373 12 12c0 6.627-5.373 12-12 12-1.637 0-3.197-.336-4.607-.93l-3.21 4.64C7.032 23.32 9.423 24 11.98 24 18.607 24 24 18.627 24 12c0-6.627-5.373-12-12-12zM11.73 14.129c-.848 0-1.536.687-1.536 1.535s.688 1.535 1.536 1.535 1.535-.688 1.535-1.535-.687-1.535-1.535-1.535zM17.986 7.15c-1.898 0-3.442 1.544-3.442 3.442 0 .524.12 1.02.33 1.46l-4.225 6.013c-.347-.133-.728-.21-1.127-.21-1.666 0-3.02 1.354-3.02 3.02 0 1.666 1.354 3.02 3.02 3.02 1.666 0 3.02-1.354 3.02-3.02 0-.256-.033-.505-.094-.74l4.28-6.09c.39.112.8.17 1.22.17 2.062 0 3.738-1.676 3.738-3.738S20.048 7.15 17.986 7.15zM7.522 19.38c-.563 0-1.02-.457-1.02-1.02 0-.563.457-1.02 1.02-1.02.563 0 1.02.457 1.02 1.02 0 .563-.457 1.02-1.02 1.02z" />
+                                                    </svg>
+                                                </div>
                                                 <span>{user.steamId}</span>
                                             </div>
                                         ) : (

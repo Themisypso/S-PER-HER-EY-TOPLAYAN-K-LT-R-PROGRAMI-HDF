@@ -2,7 +2,9 @@
 
 import { useState } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
+import Image from 'next/image'
 import { PersonDetailModal } from '@/components/PersonDetailModal'
+import { useTranslations } from 'next-intl'
 
 interface CastMember {
     id: number
@@ -30,6 +32,7 @@ interface MediaCastCrewProps {
 export function MediaCastCrew({ credits, type }: MediaCastCrewProps) {
     const [selectedPersonId, setSelectedPersonId] = useState<number | null>(null)
     const [showAllCast, setShowAllCast] = useState(false)
+    const t = useTranslations('MediaDetail')
 
     const cast = credits?.cast || []
     const crew = credits?.crew || []
@@ -50,7 +53,7 @@ export function MediaCastCrew({ credits, type }: MediaCastCrewProps) {
 
     const INITIAL_CAST = 12
     const displayedCast = showAllCast ? cast : cast.slice(0, INITIAL_CAST)
-    const castTitle = type === 'ANIME' ? 'Voice Actors' : 'Top Cast'
+    const castTitle = type === 'ANIME' ? t('voice_actors') : t('top_cast')
 
     if (cast.length === 0 && crew.length === 0) return null
 
@@ -62,11 +65,12 @@ export function MediaCastCrew({ credits, type }: MediaCastCrewProps) {
             >
                 <div className="w-11 h-11 rounded-full overflow-hidden bg-bg-secondary flex-shrink-0 flex items-center justify-center border border-border group-hover:border-accent-cyan transition-colors">
                     {person.profile_path ? (
-                        <img
+                        <Image
                             src={`https://image.tmdb.org/t/p/w185${person.profile_path}`}
+                            width={44}
+                            height={44}
                             className="w-full h-full object-cover object-top"
                             alt={person.name}
-                            loading="lazy"
                         />
                     ) : (
                         <span className="text-sm font-bold text-text-muted">{person.name.charAt(0)}</span>
@@ -94,14 +98,14 @@ export function MediaCastCrew({ credits, type }: MediaCastCrewProps) {
 
     return (
         <div className="mb-14 fade-in">
-            <h3 className="text-xl font-display font-bold text-text-primary mb-6">Cast &amp; Crew</h3>
+            <h3 className="text-xl font-display font-bold text-text-primary mb-6">{t('cast_crew')}</h3>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Left Col: Crew */}
                 <div className="space-y-6">
-                    <CrewSection title="Director" people={directors} />
-                    <CrewSection title="Writer" people={writers} />
-                    <CrewSection title="Producer" people={producers} />
+                    <CrewSection title={t('director')} people={directors} />
+                    <CrewSection title={t('writer')} people={writers} />
+                    <CrewSection title={t('producer')} people={producers} />
                 </div>
 
                 {/* Right 2 Cols: Cast */}
@@ -120,8 +124,8 @@ export function MediaCastCrew({ credits, type }: MediaCastCrewProps) {
                                 className="mt-4 flex items-center gap-1.5 text-xs text-text-secondary hover:text-accent-cyan transition-colors font-medium"
                             >
                                 {showAllCast
-                                    ? <><ChevronUp size={14} /> Show less</>
-                                    : <><ChevronDown size={14} /> Show all {cast.length} cast members</>
+                                    ? <><ChevronUp size={14} /> {t('show_less')}</>
+                                    : <><ChevronDown size={14} /> {t('show_all_cast', { count: cast.length })}</>
                                 }
                             </button>
                         )}

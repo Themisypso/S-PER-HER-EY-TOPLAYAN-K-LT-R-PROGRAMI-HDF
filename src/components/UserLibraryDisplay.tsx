@@ -36,7 +36,6 @@ export async function UserLibraryDisplay({ userId, hideRatings }: Props) {
                         {watching.map(item => (
                             <PosterCard
                                 key={item.id}
-                                // @ts-ignore
                                 item={{ ...item, userRating: hideRatings ? null : item.userRating }}
                             />
                         ))}
@@ -51,7 +50,6 @@ export async function UserLibraryDisplay({ userId, hideRatings }: Props) {
                         {completed.map(item => (
                             <PosterCard
                                 key={item.id}
-                                // @ts-ignore
                                 item={{ ...item, userRating: hideRatings ? null : item.userRating }}
                             />
                         ))}
@@ -66,7 +64,6 @@ export async function UserLibraryDisplay({ userId, hideRatings }: Props) {
                         {planned.map(item => (
                             <PosterCard
                                 key={item.id}
-                                // @ts-ignore
                                 item={{ ...item, userRating: hideRatings ? null : item.userRating }}
                             />
                         ))}

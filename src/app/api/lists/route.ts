@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma'
 // Get user's lists
 export async function GET(req: Request) {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) return new NextResponse('Unauthorized', { status: 401 })
+    if (!session?.user?.id) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
 
     try {
         const { searchParams } = new URL(req.url)
@@ -30,23 +30,23 @@ export async function GET(req: Request) {
             orderBy: { updatedAt: 'desc' }
         })
 
-        return NextResponse.json(lists)
+        return NextResponse.json({ success: true, data: lists })
     } catch (error) {
         console.error('[LISTS_GET]', error)
-        return new NextResponse('Internal Error', { status: 500 })
+        return NextResponse.json({ success: false, error: 'Internal Error' }, { status: 500 })
     }
 }
 
 // Create a new list
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) return new NextResponse('Unauthorized', { status: 401 })
+    if (!session?.user?.id) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
 
     try {
         const body = await req.json()
         const { title, description, isPublic } = body
 
-        if (!title) return new NextResponse('Title is required', { status: 400 })
+        if (!title) return NextResponse.json({ success: false, error: 'Title is required' }, { status: 400 })
 
         const list = await prisma.list.create({
             data: {
@@ -57,9 +57,9 @@ export async function POST(req: Request) {
             }
         })
 
-        return NextResponse.json(list)
+        return NextResponse.json({ success: true, data: list })
     } catch (error) {
         console.error('[LISTS_POST]', error)
-        return new NextResponse('Internal Error', { status: 500 })
+        return NextResponse.json({ success: false, error: 'Internal Error' }, { status: 500 })
     }
 }

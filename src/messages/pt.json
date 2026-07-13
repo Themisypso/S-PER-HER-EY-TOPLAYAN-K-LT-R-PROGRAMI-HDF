@@ -1,0 +1,33 @@
+{
+  "Navbar": {
+    "dashboard": "Painel",
+    "explore": "Explorar",
+    "library": "Biblioteca",
+    "trending": "Em alta",
+    "global_search": "Pesquisar...",
+    "login": "Entrar",
+    "register": "Cadastrar",
+    "my_profile": "Meu Perfil",
+    "settings": "Configurações",
+    "manage_friends": "Amigos",
+    "admin_panel": "Painel de Admin",
+    "logout": "Sair"
+  },
+  "Dashboard": {
+    "title": "Painel",
+    "welcome": "Bem-vindo",
+    "total_time": "Tempo Total",
+    "watching": "Assistindo",
+    "planned": "Planejado",
+    "completed": "Concluído",
+    "recently_watched": "Visto Recentemente",
+    "activity_feed": "Feed de Atividades"
+  },
+  "Settings": {
+    "title": "Configurações do Perfil",
+    "subtitle": "Gerencie seu perfil público, conexões e preferências de privacidade na rede.",
+    "general": "Geral",
+    "security": "Segurança",
+    "integrations": "Integrações"
+  }
+}

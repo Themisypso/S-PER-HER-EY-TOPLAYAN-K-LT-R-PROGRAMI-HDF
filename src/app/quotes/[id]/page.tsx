@@ -5,6 +5,7 @@ import { Navbar } from '@/components/Navbar'
 import { redirect, notFound } from 'next/navigation'
 import { QuoteCard } from '@/components/QuoteCard'
 import { QuoteCommentForm } from '@/components/QuoteCommentForm'
+import Image from 'next/image'
 import Link from 'next/link'
 
 export default async function QuoteDetailPage({ params }: { params: { id: string } }) {
@@ -43,7 +44,7 @@ export default async function QuoteDetailPage({ params }: { params: { id: string
                     {/* Reuse the QuoteCard, but maybe we shouldn't nest it if it links to itself. 
                         Wait, QuoteCard links to `/quotes/[id]`, which is this page. 
                         It's fine, we can use it. But let's build a dedicated view here later if needed. */}
-                    <QuoteCard quote={quote} currentUserId={session.user.id} />
+                    <QuoteCard quote={quote as any} currentUserId={session.user.id} />
                 </div>
 
                 <div className="glass-card p-6 rounded-2xl">
@@ -57,9 +58,15 @@ export default async function QuoteDetailPage({ params }: { params: { id: string
                         ) : (
                             quote.comments.map((comment: any) => (
                                 <div key={comment.id} className="flex gap-4 group">
-                                    <Link href={`/user/${comment.user.username}`} className="flex-shrink-0 mt-1">
+                                    <Link href={`/user/${comment.user.username}`} className="flex-shrink-0 mt-1 relative w-10 h-10">
                                         {comment.user.image ? (
-                                            <img src={comment.user.image} alt="" className="w-10 h-10 rounded-full object-cover border border-border group-hover:border-accent-cyan transition-colors" />
+                                            <Image 
+                                                src={comment.user.image} 
+                                                alt="" 
+                                                fill 
+                                                sizes="40px"
+                                                className="rounded-full object-cover border border-border group-hover:border-accent-cyan transition-colors" 
+                                            />
                                         ) : (
                                             <div className="w-10 h-10 rounded-full bg-bg-secondary border border-border flex items-center justify-center font-bold text-text-muted group-hover:border-accent-cyan transition-colors">
                                                 {comment.user.name?.[0] || 'U'}

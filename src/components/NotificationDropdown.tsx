@@ -3,10 +3,26 @@
 import { useState, useRef, useEffect } from 'react'
 import { Bell } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import useSWR from 'swr'
 import { formatDistanceToNow } from 'date-fns'
 
-const fetcher = (url: string) => fetch(url).then(res => res.json())
+const fetcher = (url: string) => fetch(url).then(res => res.json()).then(res => res.success ? res.data : { notifications: [] })
+
+interface NotificationActor {
+    name: string | null
+    username: string | null
+    image: string | null
+}
+
+interface Notification {
+    id: string
+    type: 'LIKE_QUOTE' | 'LIKE_LIST' | 'COMMENT_QUOTE' | 'COMMENT_DISCUSSION' | 'MENTION' | 'REPLY'
+    actor: NotificationActor
+    createdAt: string | Date
+    isRead: boolean
+    referenceId?: string | null
+}
 
 export function NotificationDropdown() {
     const { data, mutate } = useSWR('/api/notifications', fetcher, { refreshInterval: 30000 })
@@ -23,8 +39,8 @@ export function NotificationDropdown() {
         return () => document.removeEventListener('mousedown', handleClick)
     }, [])
 
-    const notifications = data?.notifications || []
-    const unreadCount = notifications.filter((n: any) => !n.isRead).length
+    const notifications: Notification[] = data?.notifications || []
+    const unreadCount = notifications.filter(n => !n.isRead).length
 
     const handleOpen = () => {
         setIsOpen(!isOpen)
@@ -60,7 +76,7 @@ export function NotificationDropdown() {
                                 No notifications yet.
                             </div>
                         ) : (
-                            notifications.map((n: any) => (
+                            notifications.map((n) => (
                                 <Link
                                     key={n.id}
                                     href={n.type === 'MENTION' || n.type === 'COMMENT_DISCUSSION' ? `/discussions/${n.referenceId}` : '/feed'}
@@ -69,7 +85,15 @@ export function NotificationDropdown() {
                                 >
                                     <div className="flex gap-3">
                                         {n.actor.image ? (
-                                            <img src={n.actor.image} alt="" className="w-8 h-8 rounded-full bg-bg-secondary object-cover" />
+                                            <div className="relative w-8 h-8 flex-shrink-0">
+                                                <Image 
+                                                    src={n.actor.image} 
+                                                    alt="" 
+                                                    fill
+                                                    sizes="32px"
+                                                    className="rounded-full bg-bg-secondary object-cover" 
+                                                />
+                                            </div>
                                         ) : (
                                             <div className="w-8 h-8 rounded-full bg-bg-secondary flex justify-center items-center text-xs font-bold">
                                                 {n.actor.name?.[0] || 'U'}

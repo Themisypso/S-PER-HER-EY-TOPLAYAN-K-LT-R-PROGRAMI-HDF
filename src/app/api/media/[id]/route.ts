@@ -26,18 +26,18 @@ async function getOwnedItem(userId: string, id: string) {
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session?.user?.id) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     const item = await getOwnedItem(session.user.id, params.id)
-    if (!item) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    return NextResponse.json({ item })
+    if (!item) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 })
+    return NextResponse.json({ success: true, data: { item } })
 }
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session?.user?.id) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
 
     const existing = await getOwnedItem(session.user.id, params.id)
-    if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    if (!existing) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 })
 
     try {
         const body = await req.json()
@@ -86,12 +86,12 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         }
 
         revalidateTag('landing-data')
-        return NextResponse.json({ item: updated })
+        return NextResponse.json({ success: true, data: { item: updated } })
     } catch (error) {
         if (error instanceof z.ZodError) {
-            return NextResponse.json({ error: error.errors[0].message }, { status: 400 })
+            return NextResponse.json({ success: false, error: error.errors[0].message }, { status: 400 })
         }
-        return NextResponse.json({ error: 'Failed to update' }, { status: 500 })
+        return NextResponse.json({ success: false, error: 'Failed to update' }, { status: 500 })
     }
 }
 

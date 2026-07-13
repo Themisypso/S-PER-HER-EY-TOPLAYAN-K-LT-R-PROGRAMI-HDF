@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { Star, ChevronRight } from 'lucide-react'
 
@@ -84,7 +85,13 @@ export function ExploreCarousel({ title, icon, endpoint, items: initialItems, de
                     >
                         <div className="relative aspect-[2/3] w-full bg-bg-secondary">
                             {item.posterUrl ? (
-                                <img src={item.posterUrl} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                <Image
+                                    src={item.posterUrl}
+                                    alt={item.title}
+                                    fill
+                                    sizes="(max-width: 768px) 144px, 176px"
+                                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                />
                             ) : (
                                 <div className="flex items-center justify-center h-full p-4 text-center text-xs text-text-muted">{item.title}</div>
                             )}

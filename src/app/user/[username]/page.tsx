@@ -9,6 +9,7 @@ import { authOptions } from '@/lib/auth'
 import { FollowButton } from '@/components/FollowButton'
 import { FriendButton, FriendStatus } from '@/components/FriendButton'
 import Link from 'next/link'
+import Image from 'next/image'
 
 interface Props {
     params: { username: string }
@@ -18,7 +19,6 @@ interface Props {
 // component both call this function but it only runs one DB query per render.
 const getUser = cache(async (slug: string) => {
     return prisma.user.findFirst({
-        // @ts-ignore
         where: { OR: [{ username: slug }, { id: slug }] },
         include: {
             settings: true,
@@ -42,28 +42,27 @@ const getUser = cache(async (slug: string) => {
 export async function generateMetadata({ params }: Props) {
     const user = await getUser(params.username)
     if (!user) return { title: 'User Not Found' }
-    const userObj = user as any;
     return {
-        title: `${userObj.name || userObj.username} - Themis`,
-        description: userObj.settings?.bio || 'Check out my media library on Themis!'
+        title: `${user.name || user.username} - Themis`,
+        description: user.settings?.bio || 'Check out my media library on Themis!'
     }
 }
 
 export default async function UserProfilePage({ params }: Props) {
-    const user = await getUser(params.username)
-    if (!user) notFound()
+    const userObj = await getUser(params.username)
+    if (!userObj) notFound()
 
     const session = await getServerSession(authOptions)
     let isFollowing = false
     let friendStatus: FriendStatus = 'NOT_FRIENDS'
 
-    if (session?.user?.id && user.id !== session.user.id) {
+    if (session?.user?.id && userObj.id !== session.user.id) {
         // Follow status
         const follow = await prisma.follows.findUnique({
             where: {
                 followerId_followingId: {
                     followerId: session.user.id,
-                    followingId: user.id
+                    followingId: userObj.id
                 }
             }
         })
@@ -73,8 +72,8 @@ export default async function UserProfilePage({ params }: Props) {
         const friendship = await prisma.friendship.findFirst({
             where: {
                 OR: [
-                    { user1Id: session.user.id, user2Id: user.id },
-                    { user1Id: user.id, user2Id: session.user.id }
+                    { user1Id: session.user.id, user2Id: userObj.id },
+                    { user1Id: userObj.id, user2Id: session.user.id }
                 ]
             }
         })
@@ -84,8 +83,8 @@ export default async function UserProfilePage({ params }: Props) {
             const req = await prisma.friendRequest.findFirst({
                 where: {
                     OR: [
-                        { senderId: session.user.id, receiverId: user.id },
-                        { senderId: user.id, receiverId: session.user.id }
+                        { senderId: session.user.id, receiverId: userObj.id },
+                        { senderId: userObj.id, receiverId: session.user.id }
                     ],
                     status: 'PENDING'
                 }
@@ -94,7 +93,6 @@ export default async function UserProfilePage({ params }: Props) {
         }
     }
 
-    const userObj = user as any;
     const isPublic = userObj.settings?.isPublic !== false
 
     const allMediaItems = isPublic ? await prisma.mediaItem.findMany({
@@ -102,8 +100,11 @@ export default async function UserProfilePage({ params }: Props) {
         select: {
             id: true, title: true, type: true, status: true,
             posterUrl: true, releaseYear: true, tmdbId: true,
-            rawgId: true,
-            bookId: true,
+            rawgId: true, bookId: true, steamAppId: true,
+            totalTimeMinutes: true, userRating: true, notes: true,
+            playtimeHours: true, runtime: true, episodeCount: true, 
+            episodeDuration: true, progress: true, pageCount: true, 
+            genres: true, overview: true, mediaId: true, createdAt: true,
         },
         orderBy: { updatedAt: 'desc' },
     }) : []
@@ -130,7 +131,14 @@ export default async function UserProfilePage({ params }: Props) {
                         <div className="relative shrink-0 group">
                             <div className="w-32 h-32 md:w-40 md:h-40 rounded-3xl bg-bg-card p-1 shadow-2xl border border-border/50 group-hover:scale-[1.02] transition-transform duration-500">
                                 {userObj.image ? (
-                                    <img src={userObj.image} alt={userObj.name || userObj.username} className="w-full h-full object-cover rounded-[1.4rem]" />
+                                    <Image 
+                                        src={userObj.image} 
+                                        alt={userObj.name || userObj.username} 
+                                        width={160} 
+                                        height={160} 
+                                        priority
+                                        className="w-full h-full object-cover rounded-[1.4rem]" 
+                                    />
                                 ) : (
                                     <div className="w-full h-full bg-gradient-to-br from-bg-secondary to-bg-card rounded-[1.4rem] flex items-center justify-center text-4xl font-bold text-text-primary">
                                         {(userObj.name || userObj.username)?.[0]?.toUpperCase()}
@@ -185,14 +193,20 @@ export default async function UserProfilePage({ params }: Props) {
                         <div className="lg:col-span-8 space-y-8">
                             {userObj.settings?.bio && (
                                 <p className="text-xl text-text-secondary leading-relaxed max-w-3xl whitespace-pre-line font-medium italic">
-                                    "{userObj.settings.bio}"
+                                    &quot;{userObj.settings.bio}&quot;
                                 </p>
                             )}
 
                             <div className="flex flex-wrap items-center gap-3">
                                 {userObj.steamId && userObj.settings?.showSteamProfile && (
                                     <a href={`https://steamcommunity.com/profiles/${userObj.steamId}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-bg-card border border-border hover:border-[#66c0f4]/50 transition-all group">
-                                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Steam_icon_logo.svg/512px-Steam_icon_logo.svg.png" alt="Steam" className="w-4 h-4 opacity-70 group-hover:opacity-100" />
+                                        <Image 
+                                            src="/steam-logo.png" 
+                                            alt="Steam" 
+                                            width={16} 
+                                            height={16} 
+                                            className="opacity-70 group-hover:opacity-100" 
+                                        />
                                         <span className="text-sm font-bold">Steam</span>
                                     </a>
                                 )}

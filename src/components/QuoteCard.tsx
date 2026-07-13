@@ -2,17 +2,44 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { MessageSquareQuote, Heart, MessageCircle, Share2, Check } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+import { BaseMedia } from '@/types/media'
+
+interface Quote {
+    id: string
+    content: string
+    reference?: string | null
+    mediaUrl?: string | null
+    attachmentType: 'NONE' | 'IMAGE' | 'VIDEO'
+    createdAt: string | Date
+    user: {
+        id: string
+        name: string | null
+        username: string | null
+        image: string | null
+    }
+    media: BaseMedia & {
+        tmdbId?: string | null
+        rawgId?: string | null
+        bookId?: string | null
+    }
+    _count?: {
+        likes?: number
+        comments?: number
+    }
+    likes?: { id: string }[]
+}
 
 interface QuoteCardProps {
-    quote: any
+    quote: Quote
     currentUserId?: string
 }
 
 export function QuoteCard({ quote, currentUserId }: QuoteCardProps) {
     const [likes, setLikes] = useState(quote._count?.likes || 0)
-    const [hasLiked, setHasLiked] = useState(quote.likes?.length > 0 || false)
+    const [hasLiked, setHasLiked] = useState((quote.likes?.length ?? 0) > 0)
     const [isLiking, setIsLiking] = useState(false)
     const [copied, setCopied] = useState(false)
 
@@ -62,7 +89,12 @@ export function QuoteCard({ quote, currentUserId }: QuoteCardProps) {
             {/* Blurred Backdrop */}
             {quote.media.backdropUrl && (
                 <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.08] group-hover:opacity-[0.15] transition-opacity duration-500">
-                    <img src={quote.media.backdropUrl} alt="" className="w-full h-full object-cover blur-sm" />
+                    <Image 
+                        src={quote.media.backdropUrl} 
+                        alt="" 
+                        fill 
+                        className="object-cover blur-sm" 
+                    />
                 </div>
             )}
 
@@ -73,9 +105,15 @@ export function QuoteCard({ quote, currentUserId }: QuoteCardProps) {
 
                 {/* Header: User Info & Timestamp */}
                 <div className="flex items-center justify-between">
-                    <Link href={`/user/${quote.user.username}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                    <Link href={`/user/${quote.user.username}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity relative w-10 h-10">
                         {quote.user.image ? (
-                            <img src={quote.user.image} alt="" className="w-10 h-10 rounded-full object-cover shadow-sm border border-border" />
+                            <Image 
+                                src={quote.user.image} 
+                                alt="" 
+                                fill
+                                sizes="40px"
+                                className="rounded-full object-cover shadow-sm border border-border" 
+                            />
                         ) : (
                             <div className="w-10 h-10 rounded-full bg-accent-pink/10 border border-accent-pink/30 flex items-center justify-center text-sm font-bold text-accent-pink uppercase shadow-sm">
                                 {quote.user.name?.[0] || 'U'}
@@ -95,17 +133,18 @@ export function QuoteCard({ quote, currentUserId }: QuoteCardProps) {
                 {/* Body: Quote Text */}
                 <Link href={`/quotes/${quote.id}`} className="block group/text mt-2 mb-2">
                     <p className="text-xl md:text-2xl font-serif italic text-text-primary leading-relaxed break-words">
-                        "{quote.content}"
+                        &quot;{quote.content}&quot;
                     </p>
                 </Link>
 
                 {/* Attachment (image or video) */}
                 {quote.mediaUrl && quote.attachmentType === 'IMAGE' && (
-                    <div className="rounded-xl overflow-hidden border border-border/40 mt-1 mb-1">
-                        <img
+                    <div className="rounded-xl overflow-hidden border border-border/40 mt-1 mb-1 relative h-64">
+                        <Image
                             src={quote.mediaUrl}
                             alt="Quote attachment"
-                            className="w-full max-h-64 object-contain bg-bg-secondary/40"
+                            fill
+                            className="object-contain bg-bg-secondary/40"
                         />
                     </div>
                 )}
@@ -122,7 +161,15 @@ export function QuoteCard({ quote, currentUserId }: QuoteCardProps) {
                 {/* Media Context Ribbon */}
                 <Link href={mediaHref()} className="flex items-center gap-3 mt-auto p-2.5 rounded-xl bg-bg-secondary/40 border border-border/30 hover:bg-bg-secondary/80 hover:border-accent-cyan/40 transition-all group/media w-full md:w-max max-w-full backdrop-blur-md">
                     {quote.media.posterUrl ? (
-                        <img src={quote.media.posterUrl} alt="" className="w-9 h-14 rounded object-cover shadow-sm shrink-0" />
+                        <div className="relative w-9 h-14 shrink-0">
+                            <Image 
+                                src={quote.media.posterUrl} 
+                                alt="" 
+                                fill
+                                sizes="36px"
+                                className="rounded object-cover shadow-sm" 
+                            />
+                        </div>
                     ) : (
                         <div className="w-9 h-14 rounded bg-bg-primary border border-border/50 flex items-center justify-center shrink-0">
                             <span className="text-[8px] text-text-muted">No Img</span>

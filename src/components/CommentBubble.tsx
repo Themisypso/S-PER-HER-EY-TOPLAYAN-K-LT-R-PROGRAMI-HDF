@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Heart, Reply, ChevronDown, ChevronUp, Loader2, Send } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -73,12 +74,14 @@ export function CommentBubble({ comment, currentUserId, threadId, onReplyPosted,
 
     return (
         <div className={`flex gap-3 group ${depth > 0 ? 'ml-8 mt-3 border-l border-border/40 pl-4' : ''}`}>
-            <Link href={`/user/${comment.user.username}`} className="flex-shrink-0 mt-1">
+            <Link href={`/user/${comment.user.username}`} className="flex-shrink-0 mt-1 relative w-8 h-8">
                 {comment.user.image ? (
-                    <img
+                    <Image
                         src={comment.user.image}
                         alt=""
-                        className="w-8 h-8 rounded-full object-cover ring-1 ring-border group-hover:ring-accent-pink/60 transition-all"
+                        fill
+                        sizes="32px"
+                        className="rounded-full object-cover ring-1 ring-border group-hover:ring-accent-pink/60 transition-all"
                     />
                 ) : (
                     <div className="w-8 h-8 rounded-full bg-bg-secondary flex items-center justify-center text-xs font-bold text-text-muted">

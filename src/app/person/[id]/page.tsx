@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { Navbar } from '@/components/Navbar'
+import Image from 'next/image'
 import { Star, Film, Tv, Calendar, MapPin, ExternalLink, Clapperboard, Heart, User as UserIcon } from 'lucide-react'
 import Link from 'next/link'
 import { getServerSession } from 'next-auth'
@@ -56,7 +57,14 @@ export default async function PersonPage({ params }: { params: { id: string } })
                     <div className="w-64 flex-shrink-0 mx-auto md:mx-0">
                         <div className="aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl border border-border bg-bg-secondary w-full group relative">
                             {data.profileUrl ? (
-                                <img src={data.profileUrl} alt={data.name} className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105" />
+                                <Image 
+                                    src={data.profileUrl} 
+                                    alt={data.name} 
+                                    fill
+                                    priority
+                                    sizes="256px"
+                                    className="object-cover object-top transition-transform duration-700 group-hover:scale-105" 
+                                />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center">
                                     <UserIcon size={64} className="text-text-muted opacity-20" />

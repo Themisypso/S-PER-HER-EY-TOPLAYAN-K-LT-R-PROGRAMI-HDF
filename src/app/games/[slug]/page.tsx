@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import Image from 'next/image'
 import { Navbar } from '@/components/Navbar'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -88,7 +89,13 @@ export default async function GameDetailPage({ params }: { params: { slug: strin
             {/* Backdrop */}
             {game.coverUrl && (
                 <div className="fixed inset-0 z-0 pointer-events-none">
-                    <img src={game.coverUrl} alt="" className="w-full h-full object-cover opacity-10 blur-xl scale-110" />
+                    <Image 
+                        src={game.coverUrl} 
+                        alt="" 
+                        fill 
+                        priority
+                        className="object-cover opacity-10 blur-xl scale-110" 
+                    />
                     <div className="absolute inset-0 bg-gradient-to-b from-bg-primary/80 via-bg-primary/95 to-bg-primary" />
                 </div>
             )}
@@ -102,9 +109,15 @@ export default async function GameDetailPage({ params }: { params: { slug: strin
                     {/* Sidebar */}
                     <div className="flex flex-col gap-4">
                         {/* Cover */}
-                        <div className="aspect-[3/4] rounded-2xl overflow-hidden border border-border shadow-2xl bg-bg-secondary">
+                        <div className="aspect-[3/4] rounded-2xl overflow-hidden border border-border shadow-2xl bg-bg-secondary relative">
                             {game.coverUrl ? (
-                                <img src={game.coverUrl} alt={game.title} className="w-full h-full object-cover" />
+                                <Image 
+                                    src={game.coverUrl} 
+                                    alt={game.title} 
+                                    fill
+                                    sizes="280px"
+                                    className="object-cover" 
+                                />
                             ) : (
                                 <div className="flex items-center justify-center h-full">
                                     <Gamepad2 size={48} className="text-text-muted opacity-50" />
@@ -242,8 +255,14 @@ export default async function GameDetailPage({ params }: { params: { slug: strin
                                 <h2 className="text-sm font-bold text-text-secondary uppercase tracking-wider mb-3">Screenshots</h2>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                     {game.screenshots.map((src: string, i: number) => (
-                                        <a key={i} href={src} target="_blank" rel="noreferrer" className="block aspect-video rounded-xl overflow-hidden border border-border hover:border-[#00ff9d]/50 transition-colors group">
-                                            <img src={src} alt={`Screenshot ${i + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                        <a key={i} href={src} target="_blank" rel="noreferrer" className="block aspect-video rounded-xl overflow-hidden border border-border hover:border-[#00ff9d]/50 transition-colors group relative">
+                                            <Image 
+                                                src={src} 
+                                                alt={`Screenshot ${i + 1}`} 
+                                                fill
+                                                sizes="(max-width: 640px) 50vw, 33vw"
+                                                className="object-cover group-hover:scale-105 transition-transform duration-300" 
+                                            />
                                         </a>
                                     ))}
                                 </div>

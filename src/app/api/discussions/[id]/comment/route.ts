@@ -7,23 +7,23 @@ import { authOptions } from '@/lib/auth'
 export async function POST(req: Request, { params }: { params: { id: string } }) {
     try {
         const session = await getServerSession(authOptions)
-        if (!session?.user?.id) return new NextResponse('Unauthorized', { status: 401 })
+        if (!session?.user?.id) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
 
         const body = await req.json()
         const { content, parentId } = body
 
-        if (!content?.trim()) return new NextResponse('Content required', { status: 400 })
+        if (!content?.trim()) return NextResponse.json({ success: false, error: 'Content required' }, { status: 400 })
 
         // Validate the thread exists
         const thread = await prisma.discussionThread.findUnique({ where: { id: params.id } })
-        if (!thread) return new NextResponse('Thread not found', { status: 404 })
+        if (!thread) return NextResponse.json({ success: false, error: 'Thread not found' }, { status: 404 })
 
         // If replying, validate parent belongs to this thread
         if (parentId) {
             const parent = await prisma.comment.findFirst({
                 where: { id: parentId, discussionThreadId: params.id }
             })
-            if (!parent) return new NextResponse('Parent comment not found', { status: 404 })
+            if (!parent) return NextResponse.json({ success: false, error: 'Parent comment not found' }, { status: 404 })
         }
 
         const comment = await prisma.comment.create({
@@ -67,9 +67,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             })
         }
 
-        return NextResponse.json(comment)
+        return NextResponse.json({ success: true, data: comment })
     } catch (error) {
         console.error('[DISCUSSION_COMMENT_POST]', error)
-        return new NextResponse('Internal Error', { status: 500 })
+        return NextResponse.json({ success: false, error: 'Internal Error' }, { status: 500 })
     }
 }

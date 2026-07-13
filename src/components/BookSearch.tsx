@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import { Search, BookOpen, Star, Loader2, Plus, X, Users, Calendar, BookMarked, Bookmark } from 'lucide-react'
+import Image from 'next/image'
 import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
 
@@ -103,9 +104,9 @@ export function BookSearch() {
                     {results.map(book => (
                         <button key={book.volumeId} onClick={() => setSelected(book)}
                             className="w-full flex gap-3 items-start p-3 rounded-xl hover:bg-bg-hover border border-transparent hover:border-border transition-all text-left group">
-                            <div className="w-10 flex-shrink-0 aspect-[2/3] rounded-lg overflow-hidden bg-bg-secondary border border-border">
+                            <div className="w-10 flex-shrink-0 aspect-[2/3] rounded-lg overflow-hidden bg-bg-secondary border border-border relative">
                                 {book.thumbnail
-                                    ? <img src={book.thumbnail} alt={book.title} className="w-full h-full object-cover" />
+                                    ? <Image src={book.thumbnail} alt={book.title} fill sizes="40px" className="object-cover" />
                                     : <div className="flex items-center justify-center h-full"><BookOpen size={14} className="text-text-muted opacity-50" /></div>}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -130,9 +131,9 @@ export function BookSearch() {
             {selected && (
                 <div className="animate-fade-in">
                     <div className="flex gap-4 mb-5">
-                        <div className="w-24 flex-shrink-0 aspect-[2/3] rounded-xl overflow-hidden bg-bg-secondary border border-border shadow-lg">
+                        <div className="w-24 flex-shrink-0 aspect-[2/3] rounded-xl overflow-hidden bg-bg-secondary border border-border shadow-lg relative">
                             {selected.largeThumbnail || selected.thumbnail
-                                ? <img src={selected.largeThumbnail || selected.thumbnail!} alt={selected.title} className="w-full h-full object-cover" />
+                                ? <Image src={selected.largeThumbnail || selected.thumbnail!} alt={selected.title} fill sizes="96px" className="object-cover" />
                                 : <div className="flex items-center justify-center h-full"><BookOpen size={24} className="text-text-muted opacity-50" /></div>}
                         </div>
                         <div className="flex-1 min-w-0">

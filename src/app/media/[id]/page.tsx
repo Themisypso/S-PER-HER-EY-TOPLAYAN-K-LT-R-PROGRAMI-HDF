@@ -5,17 +5,20 @@ import { Star, Clock, Film, Users, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { getTranslations, getLocale } from 'next-intl/server'
 import { MediaActionPanel } from '@/components/MediaActionPanel'
 import { MediaCastCrew } from '@/components/MediaCastCrew'
 import { MediaDiscussion } from '@/components/MediaDiscussion'
 import { AddQuoteCTA } from '@/components/AddQuoteCTA'
+import { TrendBadge } from '@/components/TrendBadge'
+import Image from 'next/image'
 
 /**
  * Fetch TMDB data through the internal proxy route.
  * This avoids embedding the raw API key in the server component fetch URL
  * and benefits from the LRU cache in /api/tmdb/details/[id].
  */
-async function getTmdbData(id: string, type: string) {
+async function getTmdbData(id: string, type: string, locale: string) {
     const upper = type?.toUpperCase()
     const isMovie = upper === 'MOVIE'
     const isTv = upper === 'TVSHOW' || upper === 'TV' || upper === 'ANIME'
@@ -23,9 +26,9 @@ async function getTmdbData(id: string, type: string) {
     const mediaType = isMovie ? 'movie' : 'tv'
 
     try {
-        // Use NEXTAUTH_URL (configured for both dev and prod) as the base
         const base = process.env.NEXTAUTH_URL ?? 'http://localhost:3000'
         const res = await fetch(`${base}/api/tmdb/details/${id}?type=${mediaType}`, {
+            headers: { Cookie: `NEXT_LOCALE=${locale}` },
             next: { revalidate: 3600 }
         })
         if (!res.ok) return null
@@ -37,6 +40,8 @@ async function getTmdbData(id: string, type: string) {
 
 export default async function PublicMediaPage({ params, searchParams }: { params: { id: string }, searchParams: { type?: string } }) {
     const session = await getServerSession(authOptions)
+    const t = await getTranslations('MediaDetail')
+    const locale = await getLocale()
 
     // 1. Try to find in local DB (CUID-based link from library)
     const baseItem = await prisma.mediaItem.findUnique({ where: { id: params.id } })
@@ -45,7 +50,7 @@ export default async function PublicMediaPage({ params, searchParams }: { params
     const targetTmdbId = baseItem?.tmdbId || params.id
     const targetType = baseItem?.type || searchParams.type
 
-    const tmdbData = (targetTmdbId && targetType) ? await getTmdbData(targetTmdbId, targetType as string) : null
+    const tmdbData = (targetTmdbId && targetType) ? await getTmdbData(targetTmdbId, targetType as string, locale) : null
 
     // 3. 404 if nothing found
     if (!baseItem && !tmdbData) notFound()
@@ -80,7 +85,17 @@ export default async function PublicMediaPage({ params, searchParams }: { params
     // 6. Platform stats
     let avgPlatformRating: number | null = null
     let totalTracked = 0
+    let catalogueMediaId = (baseItem as any)?.mediaId || (userMediaItem as any)?.mediaId || null
+
     if (displayItem.tmdbId) {
+        // If we don't have mediaId yet, try to find it in the catalogue by externalId
+        if (!catalogueMediaId) {
+            const catalogueItem = await (prisma as any).media.findFirst({
+                where: { externalId: displayItem.tmdbId }
+            })
+            catalogueMediaId = catalogueItem?.id || null
+        }
+
         const stats = await prisma.mediaItem.aggregate({
             where: { tmdbId: displayItem.tmdbId },
             _avg: { userRating: true },
@@ -105,7 +120,13 @@ export default async function PublicMediaPage({ params, searchParams }: { params
             <div className="relative h-[50vh] min-h-[400px] w-full mt-0">
                 {displayItem.backdropUrl ? (
                     <>
-                        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${displayItem.backdropUrl})` }} />
+                        <Image 
+                            src={displayItem.backdropUrl} 
+                            alt="" 
+                            fill 
+                            priority
+                            className="object-cover"
+                        />
                         <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/80 to-transparent" />
                         <div className="absolute inset-0 bg-gradient-to-r from-bg-primary via-bg-primary/60 to-transparent" />
                     </>
@@ -120,7 +141,14 @@ export default async function PublicMediaPage({ params, searchParams }: { params
                     <div className="w-64 flex-shrink-0 mx-auto md:mx-0">
                         <div className="aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl border border-border bg-bg-secondary w-full">
                             {displayItem.posterUrl ? (
-                                <img src={displayItem.posterUrl} alt={displayItem.title} className="w-full h-full object-cover" />
+                                <Image 
+                                    src={displayItem.posterUrl} 
+                                    alt={displayItem.title || ''} 
+                                    width={300}
+                                    height={450}
+                                    priority
+                                    className="w-full h-full object-cover" 
+                                />
                             ) : (
                                 <div className="w-full h-full flex flex-col items-center justify-center gap-3">
                                     <Film size={40} className="text-text-muted" />
@@ -130,8 +158,8 @@ export default async function PublicMediaPage({ params, searchParams }: { params
 
                         <div className="mt-8 space-y-4">
                             <MediaActionPanel
-                                baseItem={widgetItem}
-                                userMediaItem={userMediaItem}
+                                baseItem={widgetItem as any}
+                                userMediaItem={userMediaItem as any}
                                 session={session}
                                 urlId={params.id}
                             />
@@ -160,7 +188,12 @@ export default async function PublicMediaPage({ params, searchParams }: { params
                             )}
                         </div>
 
-                        <h1 className="text-4xl md:text-6xl font-display font-extrabold text-[#e8edf5] mb-6 drop-shadow-md tracking-tight leading-tight">{displayItem.title}</h1>
+                        <h1 className="text-4xl md:text-6xl font-display font-extrabold text-[#e8edf5] mb-4 drop-shadow-md tracking-tight leading-tight">{displayItem.title}</h1>
+
+                        {/* Ranking Badges */}
+                        <div className="flex justify-center md:justify-start mb-6">
+                            <TrendBadge mediaId={catalogueMediaId} mediaType={displayItem.type as string} />
+                        </div>
 
                         {/* Stats Row */}
                         <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mb-10">
@@ -173,7 +206,7 @@ export default async function PublicMediaPage({ params, searchParams }: { params
                             <div className="w-1.5 h-1.5 rounded-full bg-border md:block hidden" />
                             <div className="flex items-center gap-2">
                                 <Users size={16} className="text-[#8899aa]" />
-                                <span className="font-medium text-[#e8edf5]">{totalTracked} <span className="text-sm text-[#8899aa]">Trackers</span></span>
+                                <span className="font-medium text-[#e8edf5]">{totalTracked} <span className="text-sm text-[#8899aa]">{t('trackers')}</span></span>
                             </div>
                             {displayItem.runtime && (
                                 <>
@@ -194,10 +227,9 @@ export default async function PublicMediaPage({ params, searchParams }: { params
                             </div>
                         )}
 
-                        {/* Overview */}
                         {displayItem.overview && (
                             <div className="mb-14">
-                                <h3 className="text-xl font-display font-bold text-[#e8edf5] mb-4">Synopsis</h3>
+                                <h3 className="text-xl font-display font-bold text-[#e8edf5] mb-4">{t('synopsis')}</h3>
                                 <p className="text-[#8899aa] leading-relaxed max-w-4xl text-lg">{displayItem.overview}</p>
                             </div>
                         )}

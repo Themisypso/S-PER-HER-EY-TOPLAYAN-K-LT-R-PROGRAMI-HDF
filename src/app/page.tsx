@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { Clapperboard, Star, ArrowRight, Tv, Film, Gamepad2, Users, MessageSquareQuote, List as ListIcon, Heart, Layers, MessageSquare, BookOpen } from 'lucide-react'
 import { ThisWeekInMedia } from '@/components/ThisWeekInMedia'
 import { prisma } from '@/lib/prisma'
@@ -9,6 +10,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { ActivityFeed } from '@/components/ActivityFeed'
 import { unstable_cache } from 'next/cache'
+import { getTranslations } from 'next-intl/server'
 
 export const revalidate = 60
 
@@ -161,6 +163,8 @@ const getCachedLandingData = unstable_cache(
 export default async function LandingPage() {
     const session = await getServerSession(authOptions)
     const { trendingItems, newestItems, topItems, popularPeople, popularQuotes, trendingLists, trendingDiscussions, spotlightUsers } = await getCachedLandingData()
+    const t = await getTranslations('Landing')
+    const tExplore = await getTranslations('Explore')
 
     return (
         <main className="min-h-screen bg-bg-primary">
@@ -173,30 +177,30 @@ export default async function LandingPage() {
             <section className="pt-24 pb-16 px-6 sm:px-12 max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                 <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
                     <h1 className="text-5xl sm:text-6xl lg:text-7xl font-display font-extrabold leading-[1.1] mb-6 tracking-tight text-text-primary">
-                        Track. <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-br from-accent-cyan to-accent-purple">Connect.</span> <br />
-                        Discover.
+                        {t('track')} <br />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-br from-accent-cyan to-accent-purple">{t('connect')}</span> <br />
+                        {t('discover')}
                     </h1>
                     <p className="text-lg sm:text-xl text-text-secondary max-w-xl mb-10 leading-relaxed font-medium">
-                        Join a network of obsessive consumers. Track movies, games, and books. Curate custom lists, share iconic quotes, and see what your friends are hooked on right now.
+                        {t('hero_desc')}
                     </p>
                     <div className="flex items-center gap-4 flex-wrap justify-center lg:justify-start">
                         {session ? (
                             <>
                                 <Link href="/dashboard" className="btn-primary text-base px-8 py-3.5 flex items-center gap-2 rounded-xl group transition-all">
-                                    Enter Dashboard <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                                    {t('enter_dashboard')} <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                                 </Link>
                                 <Link href="/explore" className="btn-cyber text-base px-8 py-3.5 rounded-xl">
-                                    Explore Media
+                                    {t('explore_media')}
                                 </Link>
                             </>
                         ) : (
                             <>
                                 <Link href="/auth/register" className="btn-primary text-base px-8 py-3.5 flex items-center gap-2 rounded-xl group transition-all">
-                                    Join Free <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                                    {t('join_free')} <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                                 </Link>
                                 <Link href="/auth/login" className="btn-cyber text-base px-8 py-3.5 rounded-xl">
-                                    Sign In
+                                    {t('sign_in')}
                                 </Link>
                             </>
                         )}
@@ -207,19 +211,19 @@ export default async function LandingPage() {
                 <div className="hidden lg:grid grid-cols-2 gap-4">
                     <div className="glass-card p-6 flex flex-col gap-4 group hover:border-accent-cyan/50 transition-colors">
                         <div className="w-10 h-10 rounded-lg bg-accent-cyan/10 flex items-center justify-center text-accent-cyan"><Film size={20} /></div>
-                        <div><h3 className="font-bold text-text-primary text-lg">Movies & TV</h3><p className="text-sm text-text-secondary">Syncs deeply with TMDB for rich metadata.</p></div>
+                        <div><h3 className="font-bold text-text-primary text-lg">{t('movies_tv')}</h3><p className="text-sm text-text-secondary">{t('movies_tv_desc')}</p></div>
                     </div>
                     <div className="glass-card p-6 flex flex-col gap-4 group hover:border-accent-pink/50 transition-colors translate-y-6">
                         <div className="w-10 h-10 rounded-lg bg-accent-pink/10 flex items-center justify-center text-accent-pink"><MessageSquareQuote size={20} /></div>
-                        <div><h3 className="font-bold text-text-primary text-lg">Social Quotes</h3><p className="text-sm text-text-secondary">Save and interact with legendary dialogue.</p></div>
+                        <div><h3 className="font-bold text-text-primary text-lg">{t('social_quotes')}</h3><p className="text-sm text-text-secondary">{t('social_quotes_desc')}</p></div>
                     </div>
                     <div className="glass-card p-6 flex flex-col gap-4 group hover:border-accent-purple/50 transition-colors">
                         <div className="w-10 h-10 rounded-lg bg-accent-purple/10 flex items-center justify-center text-accent-purple"><ListIcon size={20} /></div>
-                        <div><h3 className="font-bold text-text-primary text-lg">Custom Lists</h3><p className="text-sm text-text-secondary">Curate collections and discover new favorites.</p></div>
+                        <div><h3 className="font-bold text-text-primary text-lg">{t('custom_lists')}</h3><p className="text-sm text-text-secondary">{t('custom_lists_desc')}</p></div>
                     </div>
                     <div className="glass-card p-6 flex flex-col gap-4 group hover:border-[#00ff9d]/50 transition-colors translate-y-6">
                         <div className="w-10 h-10 rounded-lg bg-[#00ff9d]/10 flex items-center justify-center text-[#00ff9d]"><Gamepad2 size={20} /></div>
-                        <div><h3 className="font-bold text-text-primary text-lg">Games & Books</h3><p className="text-sm text-text-secondary">Track your total playtime and reading pages.</p></div>
+                        <div><h3 className="font-bold text-text-primary text-lg">{t('games_books')}</h3><p className="text-sm text-text-secondary">{t('games_books_desc')}</p></div>
                     </div>
                 </div>
             </section>
@@ -229,7 +233,7 @@ export default async function LandingPage() {
                 <div className="flex items-center gap-3 mb-8">
                     <div className="w-3 h-3 rounded-full bg-accent-cyan shadow-[0_0_10px_var(--accent-cyan)] animate-pulse" />
                     <h2 className="text-2xl lg:text-3xl font-display font-bold text-text-primary">
-                        {session ? 'Friends Activity' : 'Live Community Activity'}
+                        {session ? t('friends_activity') : t('live_community_activity')}
                     </h2>
                 </div>
                 <div className="bg-bg-secondary/30 rounded-2xl border border-border p-6 shadow-sm max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
@@ -243,8 +247,8 @@ export default async function LandingPage() {
                 {trendingItems.length > 0 && (
                     <section>
                         <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-2xl font-display font-bold text-text-primary">Trending Today</h2>
-                            <Link href="/explore?sort=trending" className="text-sm font-medium text-accent-cyan hover:underline">View All</Link>
+                            <h2 className="text-2xl font-display font-bold text-text-primary">{t('trending_today')}</h2>
+                            <Link href="/explore?sort=trending" className="text-sm font-medium text-accent-cyan hover:underline">{t('view_all')}</Link>
                         </div>
                         <div className="flex flex-nowrap overflow-x-auto gap-4 pb-6 snap-x snap-mandatory scrollbar-hide items-end" style={{ scrollbarWidth: 'none' }}>
                             {trendingItems.map((item: any, idx: number) => (
@@ -263,8 +267,8 @@ export default async function LandingPage() {
                 {newestItems.length > 0 && (
                     <section>
                         <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-2xl font-display font-bold text-text-primary">New Releases & Updates</h2>
-                            <Link href="/explore?sort=newest" className="text-sm font-medium text-accent-cyan hover:underline">View All</Link>
+                            <h2 className="text-2xl font-display font-bold text-text-primary">{t('new_releases')}</h2>
+                            <Link href="/explore?sort=newest" className="text-sm font-medium text-accent-cyan hover:underline">{t('view_all')}</Link>
                         </div>
                         <div className="flex flex-nowrap overflow-x-auto gap-4 pb-6 snap-x snap-mandatory scrollbar-hide items-end" style={{ scrollbarWidth: 'none' }}>
                             {newestItems.map((item: any, idx: number) => (
@@ -282,14 +286,14 @@ export default async function LandingPage() {
 
                 <section>
                     <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-2xl font-display font-bold text-text-primary">Community Favorites</h2>
+                        <h2 className="text-2xl font-display font-bold text-text-primary">{t('community_favorites')}</h2>
                         {topItems.length > 0 && (
-                            <Link href="/explore?sort=top" className="text-sm font-medium text-accent-cyan hover:underline">View All</Link>
+                            <Link href="/explore?sort=top" className="text-sm font-medium text-accent-cyan hover:underline">{t('view_all')}</Link>
                         )}
                     </div>
                     {topItems.length === 0 ? (
                         <div className="text-center py-12 glass-card rounded-2xl border border-border/50 text-text-muted">
-                            Community favorites will appear here once users rate media.
+                            {t('community_favorites_empty')}
                         </div>
                     ) : topItems.length < 5 ? (
                         <div className="flex justify-center gap-4 flex-wrap items-end">
@@ -324,23 +328,34 @@ export default async function LandingPage() {
                         <section>
                             <div className="flex items-center justify-between mb-6">
                                 <h3 className="text-xl font-display font-bold flex items-center gap-2">
-                                    <MessageSquareQuote size={20} className="text-accent-pink" /> Most Quoted
+                                    <MessageSquareQuote size={20} className="text-accent-pink" /> {t('most_quoted')}
                                 </h3>
-                                <Link href="/quotes" className="text-sm font-medium text-accent-cyan hover:underline">View Quotes</Link>
+                                <Link href="/quotes" className="text-sm font-medium text-accent-cyan hover:underline">{t('view_quotes')}</Link>
                             </div>
                             <div className="space-y-4">
                                 {popularQuotes.map((quote: any) => (
                                     <div key={quote.id} className="glass-card p-5 rounded-xl border-l-[3px] border-l-accent-pink bg-bg-card relative overflow-hidden group">
                                         {quote.media.backdropUrl && (
                                             <div className="absolute inset-0 z-0 opacity-10 pointer-events-none transition-opacity">
-                                                <img src={quote.media.backdropUrl} alt="" className="w-full h-full object-cover" />
+                                                <Image 
+                                                    src={quote.media.backdropUrl} 
+                                                    alt="" 
+                                                    fill 
+                                                    className="object-cover" 
+                                                />
                                             </div>
                                         )}
                                         <div className="relative z-10 flex flex-col h-full">
-                                            <p className="text-sm font-medium text-text-primary italic leading-relaxed">"{quote.content}"</p>
+                                            <p className="text-sm font-medium text-text-primary italic leading-relaxed">&quot;{quote.content}&quot;</p>
                                             <div className="mt-4 flex items-center gap-3">
                                                 {quote.media.posterUrl ? (
-                                                    <img src={quote.media.posterUrl} alt="" className="w-8 h-12 rounded object-cover shadow-sm" />
+                                                    <Image 
+                                                        src={quote.media.posterUrl} 
+                                                        alt="" 
+                                                        width={32} 
+                                                        height={48} 
+                                                        className="rounded object-cover shadow-sm" 
+                                                    />
                                                 ) : (
                                                     <div className="w-8 h-12 rounded bg-bg-secondary" />
                                                 )}
@@ -360,9 +375,9 @@ export default async function LandingPage() {
                         <section>
                             <div className="flex items-center justify-between mb-6">
                                 <h3 className="text-xl font-display font-bold flex items-center gap-2">
-                                    <ListIcon size={20} className="text-accent-purple" /> Recommended Lists
+                                    <ListIcon size={20} className="text-accent-purple" /> {t('recommended_lists')}
                                 </h3>
-                                <Link href="/lists" className="text-sm font-medium text-accent-cyan hover:underline">View Lists</Link>
+                                <Link href="/lists" className="text-sm font-medium text-accent-cyan hover:underline">{t('view_lists')}</Link>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {trendingLists.map((list: any) => (
@@ -370,7 +385,13 @@ export default async function LandingPage() {
                                         <div className="flex gap-4 items-center">
                                             <div className="w-16 h-16 rounded-lg bg-bg-secondary overflow-hidden shrink-0 border border-border select-none">
                                                 {list.items?.[0]?.posterUrl ? (
-                                                    <img src={list.items[0].posterUrl} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                                    <Image 
+                                                        src={list.items[0].posterUrl} 
+                                                        alt="" 
+                                                        width={64} 
+                                                        height={64} 
+                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
+                                                    />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center text-text-muted"><Layers size={20} /></div>
                                                 )}
@@ -379,7 +400,7 @@ export default async function LandingPage() {
                                                 <h4 className="font-bold text-text-primary group-hover:text-accent-cyan transition-colors line-clamp-1">{list.title}</h4>
                                                 <div className="flex items-center gap-3 mt-1.5 text-xs text-text-muted font-bold tracking-wider uppercase">
                                                     <span className="flex items-center gap-1 text-accent-pink"><Heart size={12} className="fill-current" /> {list._count?.likes || 0}</span>
-                                                    <span>{list._count?.items || 0} Items</span>
+                                                    <span>{list._count?.items || 0} {t('items')}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -394,8 +415,8 @@ export default async function LandingPage() {
                 {popularPeople.length > 0 && (
                     <section className="pt-8">
                         <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-2xl font-display font-bold text-text-primary">Popular People</h2>
-                            <Link href="/people" className="text-sm font-medium text-accent-cyan hover:underline">View All</Link>
+                            <h2 className="text-2xl font-display font-bold text-text-primary">{t('popular_people')}</h2>
+                            <Link href="/people" className="text-sm font-medium text-accent-cyan hover:underline">{t('view_all')}</Link>
                         </div>
                         <HomePeopleSection people={popularPeople} />
                     </section>
@@ -406,9 +427,9 @@ export default async function LandingPage() {
                     <section className="pt-8">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-2xl font-display font-bold text-text-primary flex items-center gap-2">
-                                <MessageSquare size={22} className="text-accent-cyan" /> Hot Discussions
+                                <MessageSquare size={22} className="text-accent-cyan" /> {t('hot_discussions')}
                             </h2>
-                            <Link href="/discussions" className="text-sm font-medium text-accent-cyan hover:underline">All Discussions</Link>
+                            <Link href="/discussions" className="text-sm font-medium text-accent-cyan hover:underline">{t('all_discussions')}</Link>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {trendingDiscussions.map((thread: any) => (
@@ -421,7 +442,13 @@ export default async function LandingPage() {
                                     className="glass-card p-4 rounded-2xl border border-border/40 hover:border-accent-cyan/50 transition-all group bg-bg-card/40 backdrop-blur-sm hover:bg-bg-card/60 flex gap-3"
                                 >
                                     {thread.mediaPosterUrl ? (
-                                        <img src={thread.mediaPosterUrl} alt="" className="w-10 h-14 rounded-lg object-cover shrink-0 border border-border/50" />
+                                        <Image 
+                                            src={thread.mediaPosterUrl} 
+                                            alt="" 
+                                            width={40} 
+                                            height={56} 
+                                            className="rounded-lg object-cover shrink-0 border border-border/50" 
+                                        />
                                     ) : (
                                         <div className="w-10 h-14 rounded-lg bg-bg-secondary border border-border/50 flex items-center justify-center shrink-0">
                                             <MessageSquare size={14} className="text-text-muted" />
@@ -430,11 +457,11 @@ export default async function LandingPage() {
                                     <div className="flex-1 min-w-0">
                                         {thread.mediaTitle && <p className="text-[10px] text-accent-cyan font-semibold mb-0.5 truncate">{thread.mediaTitle}</p>}
                                         <h4 className="font-bold text-sm text-text-primary group-hover:text-accent-cyan transition-colors line-clamp-2 leading-snug">
-                                            {thread.title || `Discussion for ${thread.mediaTitle || 'this media'}`}
+                                            {thread.title || t('discussion_for', { title: thread.mediaTitle || 'this media' })}
                                         </h4>
                                         <div className="flex items-center gap-1.5 mt-1.5 text-xs text-text-muted">
                                             <MessageSquare size={11} />
-                                            <span>{thread._count.comments} comments</span>
+                                            <span>{thread._count.comments} {t('comments')}</span>
                                         </div>
                                     </div>
                                 </Link>
@@ -448,9 +475,9 @@ export default async function LandingPage() {
                     <section className="pt-8">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-2xl font-display font-bold text-text-primary flex items-center gap-2">
-                                <Users size={22} className="text-accent-purple" /> Community Members
+                                <Users size={22} className="text-accent-purple" /> {t('community_members')}
                             </h2>
-                            <Link href="/people" className="text-sm font-medium text-accent-cyan hover:underline">View All</Link>
+                            <Link href="/people" className="text-sm font-medium text-accent-cyan hover:underline">{t('view_all')}</Link>
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
                             {spotlightUsers.map((u: any) => (
@@ -460,7 +487,13 @@ export default async function LandingPage() {
                                     className="glass-card p-4 rounded-2xl border border-border/40 hover:border-accent-purple/40 transition-all group bg-bg-card/40 backdrop-blur-sm flex flex-col items-center gap-3 text-center"
                                 >
                                     {u.image ? (
-                                        <img src={u.image} alt="" className="w-14 h-14 rounded-full object-cover border-2 border-border group-hover:border-accent-purple/60 transition-colors shadow-md" />
+                                        <Image 
+                                            src={u.image} 
+                                            alt="" 
+                                            width={56} 
+                                            height={56} 
+                                            className="w-14 h-14 rounded-full object-cover border-2 border-border group-hover:border-accent-purple/60 transition-colors shadow-md" 
+                                        />
                                     ) : (
                                         <div className="w-14 h-14 rounded-full bg-gradient-to-br from-accent-purple/30 to-accent-cyan/30 border-2 border-border group-hover:border-accent-purple/60 transition-colors flex items-center justify-center text-xl font-bold text-accent-purple">
                                             {u.name?.[0] || u.username?.[0] || 'U'}
@@ -472,7 +505,7 @@ export default async function LandingPage() {
                                         <div className="flex items-center justify-center gap-2 mt-1.5 text-[10px] text-text-muted">
                                             <span className="flex items-center gap-0.5"><Users size={9} /> {u._count.followers}</span>
                                             <span>•</span>
-                                            <span>{u._count.mediaItems} tracked</span>
+                                            <span>{u._count.mediaItems} {t('tracked')}</span>
                                         </div>
                                     </div>
                                 </Link>
@@ -492,15 +525,15 @@ export default async function LandingPage() {
                 {/* Browse by Category */}
                 <section className="pt-8">
                     <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-2xl font-display font-bold text-text-primary">Browse by Category</h2>
+                        <h2 className="text-2xl font-display font-bold text-text-primary">{t('browse_by_category')}</h2>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                         {[
-                            { label: 'Movies', icon: Film, href: '/explore?type=movie', color: 'text-accent-cyan', bg: 'bg-accent-cyan/10 hover:bg-accent-cyan/20' },
-                            { label: 'TV Shows', icon: Tv, href: '/explore?type=tv', color: 'text-accent-purple', bg: 'bg-accent-purple/10 hover:bg-accent-purple/20' },
-                            { label: 'Anime', icon: Clapperboard, href: '/explore?type=anime', color: 'text-accent-pink', bg: 'bg-accent-pink/10 hover:bg-accent-pink/20' },
-                            { label: 'Games', icon: Gamepad2, href: '/games', color: 'text-[#00ff9d]', bg: 'bg-[#00ff9d]/10 hover:bg-[#00ff9d]/20' },
-                            { label: 'Books', icon: BookOpen, href: '/books', color: 'text-[#f5a623]', bg: 'bg-[#f5a623]/10 hover:bg-[#f5a623]/20' },
+                            { label: tExplore('movies'), icon: Film, href: '/explore?type=movie', color: 'text-accent-cyan', bg: 'bg-accent-cyan/10 hover:bg-accent-cyan/20' },
+                            { label: tExplore('tv_shows'), icon: Tv, href: '/explore?type=tv', color: 'text-accent-purple', bg: 'bg-accent-purple/10 hover:bg-accent-purple/20' },
+                            { label: tExplore('anime'), icon: Clapperboard, href: '/explore?type=anime', color: 'text-accent-pink', bg: 'bg-accent-pink/10 hover:bg-accent-pink/20' },
+                            { label: tExplore('games'), icon: Gamepad2, href: '/games', color: 'text-[#00ff9d]', bg: 'bg-[#00ff9d]/10 hover:bg-[#00ff9d]/20' },
+                            { label: tExplore('books'), icon: BookOpen, href: '/books', color: 'text-[#f5a623]', bg: 'bg-[#f5a623]/10 hover:bg-[#f5a623]/20' },
                         ].map(cat => (
                             <Link key={cat.label} href={cat.href}
                                 className={`${cat.bg} border border-border/40 hover:border-transparent rounded-2xl p-4 flex flex-col items-center gap-2 transition-all group`}
@@ -518,14 +551,14 @@ export default async function LandingPage() {
             <section className="mt-16 bg-bg-secondary/30 border-t border-border">
                 <div className="max-w-[1400px] mx-auto px-6 py-16 flex flex-col md:flex-row items-center justify-between gap-8">
                     <div className="max-w-xl text-center md:text-left">
-                        <h3 className="text-3xl font-display font-bold text-text-primary mb-3">Join the community.</h3>
-                        <p className="text-text-secondary text-lg">Detailed statistics, cross-platform tracking, and a social experience built just for media drops.</p>
+                        <h3 className="text-3xl font-display font-bold text-text-primary mb-3">{t('join_the_community')}</h3>
+                        <p className="text-text-secondary text-lg">{t('join_desc')}</p>
                     </div>
                     <div className="shrink-0">
                         {session ? (
-                            <Link href="/dashboard" className="btn-primary px-8 py-4 rounded-xl text-lg font-medium shadow-glow-cyan">Enter Dashboard</Link>
+                            <Link href="/dashboard" className="btn-primary px-8 py-4 rounded-xl text-lg font-medium shadow-glow-cyan">{t('enter_dashboard')}</Link>
                         ) : (
-                            <Link href="/auth/register" className="btn-primary px-8 py-4 rounded-xl text-lg font-medium shadow-glow-cyan">Create Free Account</Link>
+                            <Link href="/auth/register" className="btn-primary px-8 py-4 rounded-xl text-lg font-medium shadow-glow-cyan">{t('create_account')}</Link>
                         )}
                     </div>
                 </div>

@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
+import { getTmdbLang } from '@/lib/tmdb-lang'
 import { LRUCache } from 'lru-cache'
 
 const TMDB_BASE = 'https://api.themoviedb.org/3'
@@ -9,6 +10,8 @@ const API_KEY = process.env.TMDB_API_KEY
 const cache = new LRUCache<string, any>({ max: 500, ttl: 1000 * 60 * 30 })
 
 export async function GET(req: Request) {
+    const tmdbLang = getTmdbLang();
+
     const { searchParams } = new URL(req.url)
     const type = searchParams.get('type') || 'movie' // movie, tv
     const page = searchParams.get('page') || '1'
@@ -24,7 +27,7 @@ export async function GET(req: Request) {
     const endYear = searchParams.get('endYear') || ''
     const query = searchParams.get('query') || ''
 
-    const cacheKey = `discover:${type}:${page}:${sort}:${genres}:${minRating}:${withKeywords}:${withoutKeywords}:${withOriginCountry}:${year}:${startYear}:${endYear}:${query}`
+    const cacheKey = `discover:${type}:${page}:${sort}:${genres}:${minRating}:${withKeywords}:${withoutKeywords}:${withOriginCountry}:${year}:${startYear}:${endYear}:${query}:${tmdbLang}`
     if (cache.has(cacheKey)) {
         return NextResponse.json(cache.get(cacheKey))
     }
@@ -33,13 +36,13 @@ export async function GET(req: Request) {
         let endpoint = ''
 
         if (query) {
-            endpoint = `${TMDB_BASE}/search/${type}?api_key=${API_KEY}&query=${encodeURIComponent(query)}&language=en-US&page=${page}`
+            endpoint = `${TMDB_BASE}/search/${type}?api_key=${API_KEY}&query=${encodeURIComponent(query)}&language=${tmdbLang}&page=${page}`
             if (year) {
                 if (type === 'movie') endpoint += `&primary_release_year=${year}`
                 else endpoint += `&first_air_date_year=${year}`
             }
         } else {
-            endpoint = `${TMDB_BASE}/discover/${type}?api_key=${API_KEY}&language=en-US&page=${page}&sort_by=${sort}&vote_count.gte=${minVotes}`
+            endpoint = `${TMDB_BASE}/discover/${type}?api_key=${API_KEY}&language=${tmdbLang}&page=${page}&sort_by=${sort}&vote_count.gte=${minVotes}`
 
             if (genres) endpoint += `&with_genres=${genres}`
             if (minRating) endpoint += `&vote_average.gte=${minRating}`

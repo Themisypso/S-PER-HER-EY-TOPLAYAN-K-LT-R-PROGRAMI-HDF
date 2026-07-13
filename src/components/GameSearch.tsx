@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Gamepad2, Search, Loader2, Plus, Star, Monitor, ChevronRight } from 'lucide-react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 
@@ -112,7 +113,15 @@ export function GameSearch() {
                             className="flex items-center gap-3 px-3 py-3 rounded-xl bg-bg-secondary hover:bg-bg-hover border border-transparent hover:border-[#00ff9d]/40 transition-all text-left group"
                         >
                             {game.coverUrl ? (
-                                <img src={game.coverUrl} alt={game.title} className="w-12 h-9 object-cover rounded-md flex-shrink-0 border border-border" />
+                                <div className="relative w-12 h-9 flex-shrink-0">
+                                    <Image 
+                                        src={game.coverUrl} 
+                                        alt={game.title} 
+                                        fill
+                                        sizes="48px"
+                                        className="object-cover rounded-md border border-border" 
+                                    />
+                                </div>
                             ) : (
                                 <div className="w-12 h-9 rounded-md bg-bg-hover flex items-center justify-center flex-shrink-0">
                                     <Gamepad2 size={14} className="text-text-muted" />
@@ -155,11 +164,15 @@ export function GameSearch() {
                     </button>
                     <div className="flex gap-4 mb-5">
                         {selected.coverUrl && (
-                            <img
-                                src={selected.coverUrl}
-                                alt={selected.title}
-                                className="w-32 h-20 object-cover rounded-xl flex-shrink-0 border border-border shadow-card"
-                            />
+                            <div className="relative w-32 h-20 flex-shrink-0">
+                                <Image
+                                    src={selected.coverUrl}
+                                    alt={selected.title}
+                                    fill
+                                    sizes="128px"
+                                    className="object-cover rounded-xl border border-border shadow-card"
+                                />
+                            </div>
                         )}
                         <div className="flex-1 min-w-0">
                             <h3 className="text-lg font-bold font-display text-[#e8edf5] mb-1">{selected.title}</h3>

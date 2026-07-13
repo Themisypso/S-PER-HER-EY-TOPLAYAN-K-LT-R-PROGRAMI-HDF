@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Check, X, UserMinus, Loader2, Users } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -93,7 +94,15 @@ export function FriendsDashboard() {
                                 <div key={req.id} className="glass-card p-4 rounded-xl border border-accent-purple/30 flex items-center justify-between">
                                     <Link href={`/user/${req.sender?.username}`} className="flex items-center gap-3">
                                         {req.sender?.image ? (
-                                            <img src={req.sender.image} alt="" className="w-10 h-10 rounded-full" />
+                                            <div className="relative w-10 h-10 shrink-0 overflow-hidden rounded-full">
+                                                <Image 
+                                                    src={req.sender.image} 
+                                                    alt="" 
+                                                    fill
+                                                    sizes="40px"
+                                                    className="object-cover" 
+                                                />
+                                            </div>
                                         ) : (
                                             <div className="w-10 h-10 rounded-full bg-bg-secondary flex items-center justify-center font-bold text-accent-purple">
                                                 {req.sender?.name?.[0] || req.sender?.username?.[0]}
@@ -126,14 +135,22 @@ export function FriendsDashboard() {
                     </h2>
                     {friends.length === 0 ? (
                         <div className="glass-card p-8 rounded-xl border border-border text-center text-text-muted">
-                            You haven't added any friends yet.
+                            You haven&apos;t added any friends yet.
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {friends.map(friend => (
                                 <Link key={friend.id} href={`/user/${friend.username}`} className="glass-card p-4 rounded-xl border border-border/50 hover:border-accent-cyan transition-all flex items-center gap-3">
                                     {friend.image ? (
-                                        <img src={friend.image} alt="" className="w-12 h-12 rounded-full object-cover" />
+                                        <div className="relative w-12 h-12 shrink-0 overflow-hidden rounded-full border border-border">
+                                            <Image 
+                                                src={friend.image} 
+                                                alt="" 
+                                                fill
+                                                sizes="48px"
+                                                className="object-cover" 
+                                            />
+                                        </div>
                                     ) : (
                                         <div className="w-12 h-12 rounded-full bg-bg-secondary flex items-center justify-center font-bold text-accent-cyan">
                                             {friend.name?.[0] || friend.username?.[0]}
@@ -163,7 +180,15 @@ export function FriendsDashboard() {
                                 <div key={req.id} className="flex items-center justify-between gap-2">
                                     <Link href={`/user/${req.receiver?.username}`} className="flex items-center gap-2 min-w-0">
                                         {req.receiver?.image ? (
-                                            <img src={req.receiver.image} alt="" className="w-8 h-8 rounded-full" />
+                                            <div className="relative w-8 h-8 shrink-0 overflow-hidden rounded-full">
+                                                <Image 
+                                                    src={req.receiver.image} 
+                                                    alt="" 
+                                                    fill
+                                                    sizes="32px"
+                                                    className="object-cover" 
+                                                />
+                                            </div>
                                         ) : (
                                             <div className="w-8 h-8 rounded-full bg-bg-secondary flex items-center justify-center text-xs font-bold text-text-secondary">
                                                 {req.receiver?.username?.[0]}

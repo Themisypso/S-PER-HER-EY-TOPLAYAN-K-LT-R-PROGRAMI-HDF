@@ -9,25 +9,27 @@ import Link from 'next/link'
 import { ListCard } from '@/components/ListCard'
 import { ExploreCarousel } from '@/components/ExploreCarousel'
 import { Sparkles, Star, TrendingUp, Clock, Layers, LayoutGrid, Zap, Tv, Film, Gamepad2, BookOpen, Heart } from 'lucide-react'
+import { EmptyState } from '@/components/EmptyState'
+import { getTranslations } from 'next-intl/server'
 
 export const dynamic = 'force-dynamic'
 
 const RAWG_API_KEY = process.env.RAWG_API_KEY
 const RAWG_BASE = 'https://api.rawg.io/api'
 
-const TABS = [
-    { id: 'ALL', label: 'All', icon: <LayoutGrid size={16} /> },
-    { id: 'ANIME', label: 'Anime', icon: <Tv size={16} /> },
-    { id: 'MOVIE', label: 'Movies', icon: <Film size={16} /> },
-    { id: 'TVSHOW', label: 'TV Shows', icon: <Tv size={16} /> },
-    { id: 'GAME', label: 'Games', icon: <Gamepad2 size={16} /> },
-    { id: 'BOOK', label: 'Books', icon: <BookOpen size={16} /> },
+const getTabs = (t: any) => [
+    { id: 'ALL', label: t('all'), icon: <LayoutGrid size={16} /> },
+    { id: 'ANIME', label: t('anime'), icon: <Tv size={16} /> },
+    { id: 'MOVIE', label: t('movies'), icon: <Film size={16} /> },
+    { id: 'TVSHOW', label: t('tv_shows'), icon: <Tv size={16} /> },
+    { id: 'GAME', label: t('games'), icon: <Gamepad2 size={16} /> },
+    { id: 'BOOK', label: t('books'), icon: <BookOpen size={16} /> },
 ]
 
-const SORTS = [
-    { id: 'trending', label: 'Trending', icon: <TrendingUp size={14} /> },
-    { id: 'newest', label: 'Newest', icon: <Clock size={14} /> },
-    { id: 'top', label: 'Top Rated', icon: <Star size={14} /> },
+const getSorts = (t: any) => [
+    { id: 'trending', label: t('trending'), icon: <TrendingUp size={14} /> },
+    { id: 'newest', label: t('newest'), icon: <Clock size={14} /> },
+    { id: 'top', label: t('top_rated'), icon: <Star size={14} /> },
 ]
 
 const RAWG_SORT_MAP: Record<string, string> = {
@@ -71,6 +73,7 @@ export default async function ExplorePage({
     const type = typeof searchParams.type === 'string' ? searchParams.type : 'ALL'
     const sort = typeof searchParams.sort === 'string' ? searchParams.sort : 'trending'
     const session = await getServerSession(authOptions)
+    const t = await getTranslations('Explore')
 
     // Games tab: use RAWG instead of local DB
     if (type === 'GAME') {
@@ -106,7 +109,11 @@ export default async function ExplorePage({
                             ))}
                         </div>
                     ) : (
-                        <EmptyState />
+                        <EmptyState 
+                            title={t('no_games')} 
+                            description={t('no_games_desc')}
+                            icon={Gamepad2}
+                        />
                     )}
                 </main>
             </div>
@@ -178,17 +185,17 @@ export default async function ExplorePage({
                 {type === 'ALL' && sort === 'trending' ? (
                     <div className="space-y-4">
                         <ExploreCarousel
-                            title="Trending Today"
+                            title={t('trending_today')}
                             icon={<TrendingUp size={20} className="text-accent-pink" />}
                             endpoint="/api/tmdb/trending?type=all&timeWindow=day"
-                            description="Most popular across movies and shows right now."
+                            description={t('trending_today_desc')}
                         />
 
                         <ExploreCarousel
-                            title="New Releases"
+                            title={t('new_releases')}
                             icon={<Zap size={20} className="text-accent-cyan" />}
                             endpoint="/api/tmdb/discover?sort=primary_release_date.desc&minVotes=10"
-                            description="Just landed in theaters and streaming."
+                            description={t('new_releases_desc')}
                         />
 
                         {/* Local DB Driven Sections */}
@@ -244,18 +251,18 @@ export default async function ExplorePage({
                             return (
                                 <>
                                     <ExploreCarousel
-                                        title="Community Favorites"
+                                        title={t('community_favorites')}
                                         icon={<Heart size={20} className="text-accent-pink" />}
                                         // @ts-ignore
                                         items={await promiseFavorites}
-                                        description="Highly rated media that the community loves."
+                                        description={t('community_favorites_desc')}
                                     />
                                     <ExploreCarousel
-                                        title="Most Quoted"
+                                        title={t('most_quoted')}
                                         icon={<Sparkles size={20} className="text-yellow-400" />}
                                         // @ts-ignore
                                         items={await promiseQuoted}
-                                        description="Media that has sparked the most conversation."
+                                        description={t('most_quoted_desc')}
                                     />
                                 </>
                             )
@@ -267,9 +274,9 @@ export default async function ExplorePage({
                                     <div className="w-10 h-10 rounded-xl bg-accent-purple/10 border border-accent-purple/30 flex items-center justify-center">
                                         <Layers size={20} className="text-accent-purple" />
                                     </div>
-                                    <h2 className="text-2xl font-display font-bold text-text-primary">Community Loops</h2>
+                                    <h2 className="text-2xl font-display font-bold text-text-primary">{t('community_loops')}</h2>
                                 </div>
-                                <Link href="/lists" className="text-sm font-bold text-accent-cyan hover:underline">Explore All &rarr;</Link>
+                                <Link href="/lists" className="text-sm font-bold text-accent-cyan hover:underline">{t('explore_all')} &rarr;</Link>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                                 {(await (prisma as any).list.findMany({
@@ -292,7 +299,7 @@ export default async function ExplorePage({
 
                         <div className="pt-10">
                             <h2 className="text-2xl font-display font-bold text-text-primary mb-8 flex items-center gap-3">
-                                <LayoutGrid size={24} className="text-text-muted" /> Global Grid
+                                <LayoutGrid size={24} className="text-text-muted" /> {t('global_grid')}
                             </h2>
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
                                 {safeItems.map(item => (
@@ -311,7 +318,11 @@ export default async function ExplorePage({
                                 ))}
                             </div>
                         ) : (
-                            <EmptyState />
+                            <EmptyState 
+                                title={t('no_results')} 
+                                description={t('no_results_desc')}
+                                icon={LayoutGrid}
+                            />
                         )}
                     </>
                 )}
@@ -320,16 +331,17 @@ export default async function ExplorePage({
     )
 }
 
-function ExploreHeader({ type, sort }: { type: string, sort: string }) {
+async function ExploreHeader({ type, sort }: { type: string, sort: string }) {
+    const t = await getTranslations('Explore')
     return (
         <>
             <div className="mb-10">
-                <h1 className="text-4xl font-display font-bold text-text-primary mb-3">Explore</h1>
-                <p className="text-text-secondary">Discover trending media, recent additions, and highly rated content across the platform.</p>
+                <h1 className="text-4xl font-display font-bold text-text-primary mb-3">{t('title')}</h1>
+                <p className="text-text-secondary">{t('description')}</p>
             </div>
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
                 <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-                    {TABS.map(tab => {
+                    {getTabs(t).map(tab => {
                         const isActive = type === tab.id
                         return (
                             <Link key={tab.id} href={`/explore?type=${tab.id}&sort=${sort}`}
@@ -341,7 +353,7 @@ function ExploreHeader({ type, sort }: { type: string, sort: string }) {
                     })}
                 </div>
                 <div className="flex items-center gap-2 bg-bg-card p-1.5 rounded-xl border border-border shrink-0">
-                    {SORTS.map(s => {
+                    {getSorts(t).map(s => {
                         const isActive = sort === s.id
                         return (
                             <Link key={s.id} href={`/explore?type=${type}&sort=${s.id}`}
@@ -357,14 +369,3 @@ function ExploreHeader({ type, sort }: { type: string, sort: string }) {
     )
 }
 
-function EmptyState() {
-    return (
-        <div className="py-20 text-center glass-card border border-border rounded-2xl">
-            <div className="w-16 h-16 rounded-2xl bg-bg-hover border border-border flex items-center justify-center mx-auto mb-4 text-text-secondary">
-                <LayoutGrid size={24} />
-            </div>
-            <h3 className="text-xl font-display font-medium text-text-primary mb-2">No results found</h3>
-            <p className="text-text-muted">Try adjusting your filters or checking back later.</p>
-        </div>
-    )
-}

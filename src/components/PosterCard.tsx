@@ -3,6 +3,7 @@
 import { Film, Star, Clock, Tv, Gamepad2, BookOpen, Heart } from 'lucide-react'
 import Link from 'next/link'
 import { GlassCard } from '@/components/GlassCard'
+import Image from 'next/image'
 
 import { useMediaFavorites } from '@/hooks/useMediaFavorites'
 import { ProgressBar } from './ProgressBar'
@@ -37,6 +38,7 @@ interface MediaItem {
     // Progress tracking
     progress?: number | null
     pageCount?: number | null
+    mediaId?: string | null
 }
 
 type Status = 'WATCHING' | 'COMPLETED' | 'PLANNED' | 'DROPPED'
@@ -133,11 +135,12 @@ export function PosterCard({ item, onClick, href, hideStatus, showContextMenu = 
             {/* Poster */}
             <div className="relative aspect-[2/3] overflow-hidden bg-bg-secondary rounded-t-xl">
                 {item.posterUrl ? (
-                    <img
+                    <Image
                         src={item.posterUrl}
                         alt={item.title}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        loading="lazy"
+                        fill
+                        sizes="(max-width: 640px) 150px, (max-width: 768px) 170px, 200px"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                 ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center gap-3">

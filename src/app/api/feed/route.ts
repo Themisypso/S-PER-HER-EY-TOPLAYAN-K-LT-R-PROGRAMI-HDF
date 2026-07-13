@@ -2,10 +2,12 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { translateWithCache } from '@/lib/translate'
+import { cookies } from 'next/headers'
 
 export async function GET(req: Request) {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) return new NextResponse('Unauthorized', { status: 401 })
+    if (!session?.user?.id) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
 
     const { searchParams } = new URL(req.url)
     const filter = searchParams.get('filter') || 'following' // 'following' | 'global' | 'user'
@@ -59,9 +61,24 @@ export async function GET(req: Request) {
         const page = hasMore ? activities.slice(0, limit) : activities
         const nextCursor = hasMore ? page[page.length - 1].id : null
 
-        return NextResponse.json({ activities: page, hasMore, nextCursor })
+        const locale = cookies().get('NEXT_LOCALE')?.value || 'en'
+
+        // Translate content if needed
+        const translatedPage = await Promise.all(page.map(async (activity) => {
+            if (activity.content && activity.originalLang && activity.originalLang !== locale && !activity.originalLang.startsWith(locale)) {
+                // If it's a fixed system message like 'WATCHING' 'COMPLETED' etc., don't translate via Google, let frontend handle it.
+                const isSystemEnum = ['WATCHING', 'COMPLETED', 'PLANNED', 'DROPPED'].includes(activity.content);
+                if (!isSystemEnum) {
+                    const { text, wasTranslated, originalLang } = await translateWithCache(activity.content, locale, activity.originalLang);
+                    return { ...activity, content: text, wasTranslated, detectedLang: originalLang };
+                }
+            }
+            return { ...activity, wasTranslated: false, detectedLang: activity.originalLang };
+        }));
+
+        return NextResponse.json({ success: true, data: { activities: translatedPage, hasMore, nextCursor } })
     } catch (error) {
         console.error('[FEED_GET]', error)
-        return new NextResponse('Internal Error', { status: 500 })
+        return NextResponse.json({ success: false, error: 'Internal Error' }, { status: 500 })
     }
 }

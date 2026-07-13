@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import Image from 'next/image'
 import { Navbar } from '@/components/Navbar'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -87,7 +88,13 @@ export default async function BookDetailPage({ params }: { params: { volumeId: s
             {/* Soft backdrop from cover */}
             {book.thumbnail && (
                 <div className="fixed inset-0 z-0 pointer-events-none">
-                    <img src={book.thumbnail} alt="" className="w-full h-full object-cover opacity-10 blur-2xl scale-110" />
+                    <Image 
+                        src={book.thumbnail} 
+                        alt="" 
+                        fill 
+                        priority
+                        className="object-cover opacity-10 blur-2xl scale-110" 
+                    />
                     <div className="absolute inset-0 bg-gradient-to-b from-bg-primary/80 via-bg-primary/95 to-bg-primary" />
                 </div>
             )}
@@ -101,9 +108,9 @@ export default async function BookDetailPage({ params }: { params: { volumeId: s
                     {/* Sidebar */}
                     <div className="flex flex-col gap-4">
                         {/* Cover */}
-                        <div className="aspect-[2/3] rounded-2xl overflow-hidden border border-border shadow-2xl bg-bg-secondary">
+                        <div className="aspect-[2/3] rounded-2xl overflow-hidden border border-border shadow-2xl bg-bg-secondary relative">
                             {book.thumbnail
-                                ? <img src={book.thumbnail} alt={book.title} className="w-full h-full object-cover" />
+                                ? <Image src={book.thumbnail} alt={book.title} fill sizes="240px" className="object-cover" />
                                 : <div className="flex items-center justify-center h-full"><BookOpen size={48} className="text-text-muted opacity-50" /></div>}
                         </div>
 

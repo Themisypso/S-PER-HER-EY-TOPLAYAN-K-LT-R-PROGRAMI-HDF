@@ -1,10 +1,13 @@
 export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
+import { getTmdbLang } from '@/lib/tmdb-lang'
 
 const TMDB_BASE = 'https://api.themoviedb.org/3'
 const API_KEY = process.env.TMDB_API_KEY
 
 export async function GET(req: Request) {
+    const tmdbLang = getTmdbLang();
+
     const { searchParams } = new URL(req.url)
     const type = searchParams.get('type') || 'all' // all, movie, tv, person
     const timeWindow = searchParams.get('timeWindow') || 'day' // day, week

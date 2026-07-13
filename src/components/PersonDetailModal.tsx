@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { X, Star, Film, Tv, Calendar, MapPin, ExternalLink, Loader2, Clapperboard, User as UserIcon, Heart, Plus, Check } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import toast from 'react-hot-toast'
 
 interface PersonModalProps {
@@ -185,9 +186,15 @@ export function PersonDetailModal({ personId, onClose }: PersonModalProps) {
                         <div className="p-6 pb-0 flex flex-col sm:flex-row gap-6">
                             {/* Profile Photo */}
                             <div className="flex flex-col items-center sm:items-start gap-3">
-                                <div className="w-32 h-44 flex-shrink-0 rounded-xl overflow-hidden border border-border shadow-lg">
+                                <div className="w-32 h-44 flex-shrink-0 rounded-xl overflow-hidden border border-border shadow-lg relative">
                                     {data.profileUrl ? (
-                                        <img src={data.profileUrl} alt={data.name} className="w-full h-full object-cover object-top" />
+                                        <Image 
+                                            src={data.profileUrl} 
+                                            alt={data.name} 
+                                            fill
+                                            sizes="128px"
+                                            className="object-cover object-top" 
+                                        />
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center bg-bg-secondary">
                                             <UserIcon size={40} style={{ color }} />
@@ -357,9 +364,15 @@ export function PersonDetailModal({ personId, onClose }: PersonModalProps) {
                                             className="flex items-center gap-3 p-2.5 rounded-xl border border-border hover:border-border-bright bg-bg-secondary/50 transition-all group"
                                         >
                                             {/* Poster */}
-                                            <div className="w-10 h-14 flex-shrink-0 rounded-lg overflow-hidden border border-border bg-bg-primary">
+                                            <div className="w-10 h-14 flex-shrink-0 rounded-lg overflow-hidden border border-border bg-bg-primary relative">
                                                 {credit.posterUrl ? (
-                                                    <img src={credit.posterUrl} alt={credit.title} className="w-full h-full object-cover" />
+                                                    <Image 
+                                                        src={credit.posterUrl} 
+                                                        alt={credit.title} 
+                                                        fill
+                                                        sizes="40px"
+                                                        className="object-cover" 
+                                                    />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center">
                                                         {credit.mediaType === 'tv' ? (

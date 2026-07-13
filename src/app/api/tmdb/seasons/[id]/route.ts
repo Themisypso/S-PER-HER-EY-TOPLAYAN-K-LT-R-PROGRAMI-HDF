@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
+import { getTmdbLang } from '@/lib/tmdb-lang'
 import { LRUCache } from 'lru-cache'
 
 const TMDB_BASE = 'https://api.themoviedb.org/3'
@@ -13,18 +14,20 @@ const cache = new LRUCache<string, any>({ max: 500, ttl: 1000 * 60 * 30 })
  * Cached in LRU (30 min TTL).
  */
 export async function GET(req: Request, { params }: { params: { id: string } }) {
+    const tmdbLang = getTmdbLang();
+
     const { searchParams } = new URL(req.url)
     const season = searchParams.get('season') || '1'
     const { id } = params
 
-    const cacheKey = `seasons:${id}:${season}`
+    const cacheKey = `seasons:${id}:${season}:${tmdbLang}`
     if (cache.has(cacheKey)) {
         return NextResponse.json(cache.get(cacheKey))
     }
 
     try {
         const res = await fetch(
-            `${TMDB_BASE}/tv/${id}/season/${season}?api_key=${API_KEY}&language=en-US`
+            `${TMDB_BASE}/tv/${id}/season/${season}?api_key=${API_KEY}&language=${tmdbLang}`
         )
         if (!res.ok) throw new Error(`TMDB ${res.status}`)
         const data = await res.json()

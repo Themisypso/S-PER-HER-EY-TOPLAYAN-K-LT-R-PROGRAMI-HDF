@@ -3,12 +3,34 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession, signIn } from 'next-auth/react'
-import { Save, Loader2, Globe, Lock, User, Link as LinkIcon, Image as ImageIcon, Gamepad2 } from 'lucide-react'
+import { Save, Loader2, Globe, Lock, User, Link as LinkIcon, Image as ImageIcon, Gamepad2, Upload } from 'lucide-react'
+import Image from 'next/image'
 import toast from 'react-hot-toast'
 
+interface User {
+    id: string
+    name: string | null
+    username: string | null
+    email: string
+    image: string | null
+    steamId?: string | null
+}
+
+interface UserSettings {
+    bio: string | null
+    website: string | null
+    twitter: string | null
+    instagram: string | null
+    isPublic: boolean
+    hideRatings: boolean
+    hideActivity: boolean
+    showSteamProfile: boolean
+    language: string
+}
+
 interface Props {
-    initialSettings: any
-    user: any
+    initialSettings: UserSettings | null
+    user: User | null
 }
 
 export function SettingsForm({ initialSettings, user }: Props) {
@@ -24,6 +46,11 @@ export function SettingsForm({ initialSettings, user }: Props) {
     // Steam Integration State
     const [verifyingSteam, setVerifyingSteam] = useState(false)
     const [syncingSteam, setSyncingSteam] = useState(false)
+    const [steamProgress, setSteamProgress] = useState<{ progress: number, text: string } | null>(null)
+
+    // IMDB Import State
+    const [importingImdb, setImportingImdb] = useState(false)
+    const [imdbProgress, setImdbProgress] = useState<{ progress: number, text: string } | null>(null)
 
     useEffect(() => {
         if (searchParams.get('steam_connected') === 'true') {
@@ -110,7 +137,7 @@ export function SettingsForm({ initialSettings, user }: Props) {
 
     const handleSteamConnect = async () => {
         setVerifyingSteam(true)
-        await signIn('steam', { callbackUrl: '/settings?steam_connected=true' })
+        window.location.href = '/api/settings/steam'
     }
 
     const handleSteamDisconnect = async () => {
@@ -131,15 +158,110 @@ export function SettingsForm({ initialSettings, user }: Props) {
 
     const handleSteamSync = async () => {
         setSyncingSteam(true)
+        setSteamProgress({ progress: 0, text: 'Connecting to Steam...' })
         try {
             const res = await fetch('/api/steam/sync', { method: 'POST' })
-            const data = await res.json()
-            if (!res.ok) throw new Error(data.error)
-            toast.success(`Sync complete! Updated ${data.updatedCount} games.`)
+            if (!res.ok) {
+                let errStr = 'Failed to sync Steam'
+                try { const data = await res.json(); errStr = data.error || errStr } catch(e){}
+                throw new Error(errStr)
+            }
+            
+            const reader = res.body?.getReader()
+            const decoder = new TextDecoder()
+            let finalUpdated = 0
+
+            if (reader) {
+                let buffer = ''
+                while (true) {
+                    const { done, value } = await reader.read()
+                    if (done) break
+                    buffer += decoder.decode(value, { stream: true })
+                    const lines = buffer.split('\n')
+                    buffer = lines.pop() || ''
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(line.slice(6))
+                                if (data.done) {
+                                    finalUpdated = data.updatedCount
+                                } else if (data.progress !== undefined) {
+                                    setSteamProgress({ 
+                                        progress: data.progress, 
+                                        text: `${data.progress}% (${data.processed}/${data.total} games)` 
+                                    })
+                                }
+                            } catch (e) {}
+                        }
+                    }
+                }
+            }
+            toast.success(`Sync complete! Updated ${finalUpdated} games.`)
         } catch (err: any) {
             toast.error(err.message || 'Failed to sync Steam')
         }
+        setSteamProgress(null)
         setSyncingSteam(false)
+    }
+
+    const handleImdbImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        setImportingImdb(true)
+        setImdbProgress({ progress: 0, text: 'Parsing file...' })
+        try {
+            const formData = new FormData()
+            formData.append('file', file)
+            const res = await fetch('/api/import/imdb', {
+                method: 'POST',
+                body: formData
+            })
+            if (!res.ok) {
+                let errStr = 'Failed to import IMDB list'
+                try { const data = await res.json(); errStr = data.error || errStr } catch(e){}
+                throw new Error(errStr)
+            }
+            
+            const reader = res.body?.getReader()
+            const decoder = new TextDecoder()
+            let finalProcessed = 0
+            let finalAdded = 0
+
+            if (reader) {
+                let buffer = ''
+                while (true) {
+                    const { done, value } = await reader.read()
+                    if (done) break
+                    buffer += decoder.decode(value, { stream: true })
+                    const lines = buffer.split('\n')
+                    buffer = lines.pop() || ''
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(line.slice(6))
+                                if (data.done) {
+                                    finalProcessed = data.processed
+                                    finalAdded = data.added
+                                } else if (data.progress !== undefined) {
+                                    setImdbProgress({ 
+                                        progress: data.progress, 
+                                        text: `${data.progress}% (${data.processed}/${data.total} processed)` 
+                                    })
+                                }
+                            } catch (e) {}
+                        }
+                    }
+                }
+            }
+            toast.success(`Import complete! Processed ${finalProcessed} items (${finalAdded} new).`)
+            router.refresh()
+        } catch (err: any) {
+            toast.error(err.message || 'Failed to import IMDB list')
+        }
+        setImdbProgress(null)
+        setImportingImdb(false)
+        e.target.value = '' // reset input
     }
 
     return (
@@ -154,7 +276,13 @@ export function SettingsForm({ initialSettings, user }: Props) {
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 mb-8 pb-8 border-b border-border/50">
                     <div className="w-24 h-24 rounded-full bg-bg-secondary border border-border overflow-hidden flex-shrink-0 relative group">
                         {avatar ? (
-                            <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
+                            <Image 
+                                src={avatar} 
+                                alt="Avatar" 
+                                width={96} 
+                                height={96} 
+                                className="w-full h-full object-cover" 
+                            />
                         ) : (
                             <User size={40} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-text-muted" />
                         )}
@@ -240,8 +368,9 @@ export function SettingsForm({ initialSettings, user }: Props) {
             {/* Integrations Section */}
             <section className="glass-card p-6 rounded-2xl border border-border">
                 <div className="flex items-center gap-2 mb-6 text-text-primary">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Steam_icon_logo.svg/512px-Steam_icon_logo.svg.png"
-                        alt="Steam" className="w-5 h-5 object-contain" />
+                    <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-bg-secondary border border-border rounded-lg">
+                        <Gamepad2 size={22} className="text-accent-cyan" />
+                    </div>
                     <h2 className="text-lg font-bold font-display">Gaming & Integrations</h2>
                 </div>
 
@@ -256,8 +385,9 @@ export function SettingsForm({ initialSettings, user }: Props) {
                                 className="sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg border border-[#1e2a3a] bg-[#171a21] text-white hover:bg-[#2a475e] hover:border-[#66c0f4] transition-all text-sm font-medium"
                             >
                                 {verifyingSteam ? <Loader2 size={16} className="animate-spin text-[#66c0f4]" /> : (
-                                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Steam_icon_logo.svg/512px-Steam_icon_logo.svg.png"
-                                        alt="" className="w-5 h-5 object-contain" />
+                                    <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current">
+                                        <path d="M11.979 0C5.353 0 0 5.373 0 12c0 4.148 2.11 7.822 5.32 10.02l3.206-4.634c-.16-.395-.24-.814-.24-1.258 0-1.898 1.543-3.441 3.442-3.441 1.09 0 2.052.513 2.686 1.31l4.582-6.52c.007-.11.02-.218.02-.328 0-3.313-2.696-6.01-6.01-6.01-3.315 0-6.01 2.697-6.01 6.01 0 .426.046.84.133 1.234l-3.36 4.856C1.488 15.65 0 13.916 0 12c0-6.627 5.373-12 12-12s12 5.373 12 12c0 6.627-5.373 12-12 12-1.637 0-3.197-.336-4.607-.93l-3.21 4.64C7.032 23.32 9.423 24 11.98 24 18.607 24 24 18.627 24 12c0-6.627-5.373-12-12-12zM11.73 14.129c-.848 0-1.536.687-1.536 1.535s.688 1.535 1.536 1.535 1.535-.688 1.535-1.535-.687-1.535-1.535-1.535zM17.986 7.15c-1.898 0-3.442 1.544-3.442 3.442 0 .524.12 1.02.33 1.46l-4.225 6.013c-.347-.133-.728-.21-1.127-.21-1.666 0-3.02 1.354-3.02 3.02 0 1.666 1.354 3.02 3.02 3.02 1.666 0 3.02-1.354 3.02-3.02 0-.256-.033-.505-.094-.74l4.28-6.09c.39.112.8.17 1.22.17 2.062 0 3.738-1.676 3.738-3.738S20.048 7.15 17.986 7.15zM7.522 19.38c-.563 0-1.02-.457-1.02-1.02 0-.563.457-1.02 1.02-1.02.563 0 1.02.457 1.02 1.02 0 .563-.457 1.02-1.02 1.02z" />
+                                    </svg>
                                 )}
                                 Connect with Steam
                             </button>
@@ -274,20 +404,26 @@ export function SettingsForm({ initialSettings, user }: Props) {
                                     type="button"
                                     onClick={handleSteamSync}
                                     disabled={syncingSteam}
-                                    className="px-6 py-3 rounded-xl bg-accent-cyan text-bg-dark font-bold hover:bg-accent-cyan/90 transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
+                                    className="px-6 py-3 rounded-xl bg-accent-cyan text-bg-dark font-bold hover:bg-accent-cyan/90 transition-all flex items-center justify-center gap-2 group disabled:opacity-50 min-w-[220px] relative overflow-hidden"
                                 >
-                                    {syncingSteam ? (
-                                        <Loader2 size={18} className="animate-spin" />
-                                    ) : (
-                                        <div className="relative w-5 h-5 flex items-center justify-center">
-                                            <img
-                                                src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Steam_icon_logo.svg/512px-Steam_icon_logo.svg.png"
-                                                alt="Steam Logo"
-                                                className="w-full h-full object-contain filter invert brightness-0 group-hover:scale-110 transition-transform"
-                                            />
-                                        </div>
+                                    {syncingSteam && steamProgress && (
+                                        <div className="absolute inset-0 bg-white/20 origin-left transition-all duration-300" style={{ width: `${steamProgress.progress}%` }} />
                                     )}
-                                    Sync Library & Playtime
+                                    <span className="relative z-10 flex items-center gap-2">
+                                        {syncingSteam ? (
+                                            <>
+                                                <Loader2 size={18} className="animate-spin" />
+                                                <span>{steamProgress?.text || 'Syncing...'}</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current">
+                                                    <path d="M11.979 0C5.353 0 0 5.373 0 12c0 4.148 2.11 7.822 5.32 10.02l3.206-4.634c-.16-.395-.24-.814-.24-1.258 0-1.898 1.543-3.441 3.442-3.441 1.09 0 2.052.513 2.686 1.31l4.582-6.52c.007-.11.02-.218.02-.328 0-3.313-2.696-6.01-6.01-6.01-3.315 0-6.01 2.697-6.01 6.01 0 .426.046.84.133 1.234l-3.36 4.856C1.488 15.65 0 13.916 0 12c0-6.627 5.373-12 12-12s12 5.373 12 12c0 6.627-5.373 12-12 12-1.637 0-3.197-.336-4.607-.93l-3.21 4.64C7.032 23.32 9.423 24 11.98 24 18.607 24 24 18.627 24 12c0-6.627-5.373-12-12-12zM11.73 14.129c-.848 0-1.536.687-1.536 1.535s.688 1.535 1.536 1.535 1.535-.688 1.535-1.535-.687-1.535-1.535-1.535zM17.986 7.15c-1.898 0-3.442 1.544-3.442 3.442 0 .524.12 1.02.33 1.46l-4.225 6.013c-.347-.133-.728-.21-1.127-.21-1.666 0-3.02 1.354-3.02 3.02 0 1.666 1.354 3.02 3.02 3.02 1.666 0 3.02-1.354 3.02-3.02 0-.256-.033-.505-.094-.74l4.28-6.09c.39.112.8.17 1.22.17 2.062 0 3.738-1.676 3.738-3.738S20.048 7.15 17.986 7.15zM7.522 19.38c-.563 0-1.02-.457-1.02-1.02 0-.563.457-1.02 1.02-1.02.563 0 1.02.457 1.02 1.02 0 .563-.457 1.02-1.02 1.02z" />
+                                                </svg>
+                                                Sync Library & Playtime
+                                            </>
+                                        )}
+                                    </span>
                                 </button>
                                 <button
                                     type="button"
@@ -300,6 +436,35 @@ export function SettingsForm({ initialSettings, user }: Props) {
                             </div>
                         </div>
                     )}
+                </div>
+
+                {/* IMDB Import Section */}
+                <div className="mt-6 pt-6 border-t border-border/50">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">IMDB List Import</label>
+                            <p className="text-sm text-text-muted">Import your watch history, ratings, and watchlist from an IMDB CSV/TSV export.</p>
+                        </div>
+                        <label className={`sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg border border-[#f5c518]/30 bg-[#f5c518]/10 text-[#f5c518] hover:bg-[#f5c518]/20 transition-all text-sm font-bold cursor-pointer relative overflow-hidden min-w-[220px] ${importingImdb ? 'opacity-80 pointer-events-none' : ''}`}>
+                            {importingImdb && imdbProgress && (
+                                <div className="absolute inset-0 bg-[#f5c518]/20 origin-left transition-all duration-300" style={{ width: `${imdbProgress.progress}%` }} />
+                            )}
+                            <span className="relative z-10 flex items-center gap-2">
+                                {importingImdb ? (
+                                    <>
+                                        <Loader2 size={16} className="animate-spin" />
+                                        <span>{imdbProgress?.text || 'Importing...'}</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Upload size={16} />
+                                        <span>Upload CSV/TSV</span>
+                                    </>
+                                )}
+                            </span>
+                            <input type="file" accept=".csv,.tsv,.txt" className="hidden" onChange={handleImdbImport} disabled={importingImdb} />
+                        </label>
+                    </div>
                 </div>
             </section>
 

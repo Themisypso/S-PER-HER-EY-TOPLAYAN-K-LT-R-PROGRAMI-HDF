@@ -13,11 +13,11 @@ export async function GET(req: Request) {
     const query = searchParams.get('q')
 
     if (!query || query.length < 2) {
-        return NextResponse.json({ results: [] })
+        return NextResponse.json({ success: true, data: { results: [] } })
     }
 
     if (!API_KEY) {
-        return NextResponse.json({ error: 'RAWG API key not configured' }, { status: 500 })
+        return NextResponse.json({ success: false, error: 'RAWG API key not configured' }, { status: 500 })
     }
 
     const cacheKey = `rawg:search:${query.toLowerCase()}`
@@ -46,11 +46,11 @@ export async function GET(req: Request) {
             metacritic: game.metacritic || null,
         }))
 
-        const response = { results }
+        const response = { success: true, data: { results } }
         cache.set(cacheKey, response)
         return NextResponse.json(response)
     } catch (error) {
         console.error('[RAWG SEARCH ERROR]', error)
-        return NextResponse.json({ error: 'Failed to search RAWG' }, { status: 500 })
+        return NextResponse.json({ success: false, error: 'Failed to search RAWG' }, { status: 500 })
     }
 }

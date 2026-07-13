@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Search, Star, Loader2, BookOpen, Filter, Heart, X } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useMediaFavorites } from '@/hooks/useMediaFavorites'
@@ -252,7 +253,13 @@ export function BrowseBooks() {
                                     <Link href={`/books/${book.volumeId}`} className="block">
                                         <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-bg-secondary border border-border shadow-card mb-2 group-hover:border-[var(--accent-pink)]/40 transition-all">
                                             {book.thumbnail
-                                                ? <img src={book.thumbnail} alt={book.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                                ? <Image 
+                                                    src={book.thumbnail} 
+                                                    alt={book.title} 
+                                                    fill
+                                                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                                                    className="object-cover group-hover:scale-105 transition-transform duration-300" 
+                                                  />
                                                 : <div className="flex items-center justify-center h-full"><BookOpen size={32} className="text-text-muted opacity-40" /></div>}
                                             {book.averageRating && (
                                                 <div className="absolute top-2 right-2 flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded bg-black/70 text-[#ffd700]">

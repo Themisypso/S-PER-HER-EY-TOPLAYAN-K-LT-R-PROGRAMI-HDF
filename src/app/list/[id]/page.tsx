@@ -4,6 +4,7 @@ import { PosterCard } from '@/components/PosterCard'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Lock, Globe, List as ListIcon, User as UserIcon } from 'lucide-react'
 import { notFound, redirect } from 'next/navigation'
 
@@ -65,7 +66,15 @@ export default async function ListViewPage({ params }: { params: { id: string } 
                         <div className="flex items-center gap-4 border-t border-border pt-6">
                             <Link href={`/user/${list.user.username}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                                 {list.user.image ? (
-                                    <img src={list.user.image} alt={list.user.name || 'User'} className="w-10 h-10 rounded-full border border-border" />
+                                    <div className="relative w-10 h-10 flex-shrink-0">
+                                        <Image 
+                                            src={list.user.image} 
+                                            alt={list.user.name || 'User'} 
+                                            fill
+                                            sizes="40px"
+                                            className="rounded-full border border-border object-cover" 
+                                        />
+                                    </div>
                                 ) : (
                                     <div className="w-10 h-10 rounded-full bg-bg-secondary border border-border flex items-center justify-center text-accent-pink">
                                         <UserIcon size={20} />

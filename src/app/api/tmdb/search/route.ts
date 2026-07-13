@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
+import { getTmdbLang } from '@/lib/tmdb-lang'
 import { LRUCache } from 'lru-cache'
 
 const TMDB_BASE = 'https://api.themoviedb.org/3'
@@ -9,21 +10,24 @@ const API_KEY = process.env.TMDB_API_KEY
 const cache = new LRUCache<string, any>({ max: 500, ttl: 1000 * 60 * 5 })
 
 export async function GET(req: Request) {
+    const tmdbLang = getTmdbLang();
+
     const { searchParams } = new URL(req.url)
     const query = searchParams.get('q')
     const type = searchParams.get('type') || 'multi' // multi, movie, tv
+    const includeExternal = searchParams.get('includeExternal') === 'true'
 
     if (!query || query.length < 2) {
-        return NextResponse.json({ results: [] })
+        return NextResponse.json({ success: true, data: [] })
     }
 
-    const cacheKey = `search:${type}:${query}`
+    const cacheKey = `search:${type}:${query}:${includeExternal}:${tmdbLang}`
     if (cache.has(cacheKey)) {
         return NextResponse.json(cache.get(cacheKey))
     }
 
     try {
-        let endpoint = `${TMDB_BASE}/search/${type}?api_key=${API_KEY}&query=${encodeURIComponent(query)}&language=en-US&page=1`
+        let endpoint = `${TMDB_BASE}/search/${type}?api_key=${API_KEY}&query=${encodeURIComponent(query)}&language=${tmdbLang}&page=1`
 
         const res = await fetch(endpoint, { next: { revalidate: 300 } })
         if (!res.ok) throw new Error(`TMDB error: ${res.status}`)
@@ -77,8 +81,9 @@ export async function GET(req: Request) {
         }
 
         // Parallel fetch for Books & Games
-        if (type === 'multi') {
+        if (type === 'multi' && includeExternal) {
             try {
+                // ... logic same ...
                 // Fetch Books from Google direct
                 const GOOGLE_BOOKS_API_KEY = process.env.GOOGLE_BOOKS_API_KEY
                 const booksUrl = GOOGLE_BOOKS_API_KEY
@@ -142,11 +147,9 @@ export async function GET(req: Request) {
             return true
         })
 
-        const response = { results }
-        cache.set(cacheKey, response)
-        return NextResponse.json(response)
+        return NextResponse.json({ success: true, data: results })
     } catch (error) {
         console.error('[TMDB SEARCH ERROR]', error)
-        return NextResponse.json({ error: 'Failed to search TMDB' }, { status: 500 })
+        return NextResponse.json({ success: false, error: 'Failed to search TMDB' }, { status: 500 })
     }
 }

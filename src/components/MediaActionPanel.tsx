@@ -11,14 +11,25 @@ import { ProgressBar } from './ProgressBar'
 import { StatusIconBar, type Status } from './StatusIconBar'
 import { calcProgressFraction, formatProgressLabel } from '@/lib/utils/media'
 import Link from 'next/link'
+import { Session } from 'next-auth'
+import { MediaItem, BaseMedia } from '@/types/media'
+import { useTranslations } from 'next-intl'
 
-export function MediaActionPanel({ baseItem, userMediaItem, session, urlId }: any) {
+interface MediaActionPanelProps {
+    baseItem: any // Complex TMDB/RAWG object, keeping as any for now but could be SearchResult
+    userMediaItem: MediaItem | null
+    session: Session | null
+    urlId: string
+}
+
+export function MediaActionPanel({ baseItem, userMediaItem, session, urlId }: MediaActionPanelProps) {
     const { isFavorited, toggleFavorite } = useMediaFavorites()
     const [localItem, setLocalItem] = useState(userMediaItem)
     const [editing, setEditing] = useState(false)
     const [pendingStatus, setPendingStatus] = useState<Status | null>(null)
     const [saving, setSaving] = useState(false)
     const [showAddToList, setShowAddToList] = useState(false)
+    const t = useTranslations('MediaDetail')
 
     const isFav = isFavorited(baseItem?.tmdbId?.toString())
 
@@ -26,7 +37,7 @@ export function MediaActionPanel({ baseItem, userMediaItem, session, urlId }: an
         return (
             <Link href={`/auth/login?callbackUrl=/media/${urlId}`}
                 className="btn-primary w-full flex items-center justify-center py-4 text-sm font-bold shadow-lg shadow-accent-cyan/20 tracking-wider">
-                SIGN IN TO TRACK
+                {t('sign_in_track')}
             </Link>
         )
     }
@@ -51,7 +62,7 @@ export function MediaActionPanel({ baseItem, userMediaItem, session, urlId }: an
                     className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-border bg-bg-card font-bold tracking-wide transition-all text-text-secondary hover:border-text-muted hover:text-text-primary"
                 >
                     <ListPlus size={18} />
-                    ADD TO LIST
+                    {t('add_list')}
                 </button>
 
                 {showAddToList && (
@@ -64,7 +75,7 @@ export function MediaActionPanel({ baseItem, userMediaItem, session, urlId }: an
     // ─── Status update (auto-save on icon click) ──────────────────────────────
     async function handleStatusChange(newStatus: Status) {
         // If clicking the already-active status, just open the editor
-        if (newStatus === localItem.status && !editing) {
+        if (newStatus === localItem?.status && !editing) {
             setEditing(true)
             return
         }
@@ -72,21 +83,21 @@ export function MediaActionPanel({ baseItem, userMediaItem, session, urlId }: an
         if (newStatus === 'WATCHING' || newStatus === 'DROPPED') {
             setEditing(true)
         }
-        setPendingStatus(newStatus)
+        setPendingStatus(newStatus as any)
         setSaving(true)
         try {
-            const res = await fetch(`/api/media/${localItem.id}`, {
+            const res = await fetch(`/api/media/${localItem?.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus }),
             })
             if (!res.ok) throw new Error()
-            setLocalItem({ ...localItem, status: newStatus })
+            setLocalItem({ ...localItem!, status: newStatus as any })
             toast.success(`Status → ${newStatus.charAt(0) + newStatus.slice(1).toLowerCase()}`)
         } catch {
             toast.error('Failed to update status')
             // Revert optimistic edit open only if the current status wasn't already WATCHING/DROPPED
-            if (localItem.status !== 'WATCHING' && localItem.status !== 'DROPPED') {
+            if (localItem!.status !== 'WATCHING' && localItem!.status !== 'DROPPED') {
                 setEditing(false)
             }
         }
@@ -94,38 +105,38 @@ export function MediaActionPanel({ baseItem, userMediaItem, session, urlId }: an
         setPendingStatus(null)
     }
 
-    const progressFraction = calcProgressFraction(localItem)
-    const progressLabel = formatProgressLabel(localItem)
+    const progressFraction = calcProgressFraction(localItem!)
+    const progressLabel = formatProgressLabel(localItem!)
 
     // ─── Editing panel ────────────────────────────────────────────────────────
     if (editing) {
         return (
             <div className="bg-bg-card rounded-xl border border-border p-4 animate-fade-in shadow-card text-left mt-4 space-y-4">
                 <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-bold text-text-primary">Update Tracking</h4>
+                    <h4 className="text-sm font-bold text-text-primary">{t('update_tracking')}</h4>
                     <button onClick={() => setEditing(false)}
-                        className="text-text-muted hover:text-text-secondary text-xs transition-colors">✕ Close</button>
+                        className="text-text-muted hover:text-text-secondary text-xs transition-colors">✕ {t('close')}</button>
                 </div>
 
                 <div className="space-y-1.5">
-                    <label className="block text-[10px] text-text-muted uppercase tracking-wider font-bold">Status</label>
-                    <StatusIconBar value={localItem.status} onChange={handleStatusChange} disabled={saving} />
+                    <label className="block text-[10px] text-text-muted uppercase tracking-wider font-bold">{t('status')}</label>
+                    <StatusIconBar value={localItem!.status || 'PLANNED'} onChange={handleStatusChange} disabled={saving} />
                 </div>
 
                 {/* Progress editor — shown inline when WATCHING or DROPPED */}
-                {(localItem.status === 'WATCHING' || localItem.status === 'DROPPED') && (
+                {(localItem!.status === 'WATCHING' || localItem!.status === 'DROPPED') && (
                     <div>
                         <label className="block text-[10px] text-text-muted uppercase tracking-wider font-bold mb-2 flex items-center gap-1.5">
-                            <TrendingUp size={10} /> {localItem.status === 'DROPPED' ? 'Last Point' : 'Progress'}
+                            <TrendingUp size={10} /> {localItem!.status === 'DROPPED' ? t('last_point') : t('progress')}
                         </label>
                         <ProgressEditor
                             item={{
-                                ...localItem,
-                                tmdbId: baseItem.tmdbId ?? localItem.tmdbId ?? null,
-                                seasonCount: baseItem.seasonCount ?? localItem.seasonCount ?? null,
+                                ...localItem!,
+                                tmdbId: baseItem.tmdbId ?? localItem!.tmdbId ?? null,
+                                seasonCount: baseItem.seasonCount ?? localItem!.seasonCount ?? null,
                             }}
                             onProgressSaved={(updated) => {
-                                setLocalItem({ ...localItem, ...updated })
+                                setLocalItem({ ...localItem!, ...updated })
                             }}
                         />
                     </div>
@@ -133,7 +144,7 @@ export function MediaActionPanel({ baseItem, userMediaItem, session, urlId }: an
 
                 <button onClick={() => setEditing(false)}
                     className="w-full py-2 rounded-lg text-sm border border-border text-text-secondary hover:text-text-primary hover:border-accent-cyan transition-colors flex items-center justify-center gap-1.5">
-                    <Check size={14} /> Done
+                    <Check size={14} /> {t('done')}
                 </button>
             </div>
         )
@@ -145,7 +156,7 @@ export function MediaActionPanel({ baseItem, userMediaItem, session, urlId }: an
             {/* Status card */}
             <div className="w-full py-3 px-4 text-sm font-medium rounded-xl border border-border-bright bg-bg-card shadow-lg space-y-3">
                 <div className="flex items-center justify-between">
-                    <span className="text-accent-cyan font-bold tracking-wide text-xs">✓ IN LIBRARY</span>
+                    <span className="text-accent-cyan font-bold tracking-wide text-xs">✓ {t('in_library')}</span>
                     <button onClick={() => setEditing(true)}
                         className="p-1.5 hover:bg-bg-hover rounded-lg text-text-secondary hover:text-accent-cyan transition-colors"
                         title="Edit tracking">
@@ -155,30 +166,30 @@ export function MediaActionPanel({ baseItem, userMediaItem, session, urlId }: an
 
                 {/* Quick status bar (read-only click = open editor) */}
                 <StatusIconBar
-                    value={localItem.status}
+                    value={localItem!.status || 'PLANNED'}
                     onChange={handleStatusChange}
                     disabled={saving}
                 />
             </div>
 
             {/* Inline progress bar for WATCHING with progress */}
-            {localItem.status === 'WATCHING' && progressFraction !== null && (
+            {localItem!.status === 'WATCHING' && progressFraction !== null && (
                 <button onClick={() => setEditing(true)}
                     className="w-full glass-card p-3 rounded-xl border border-border hover:border-accent-cyan/50 transition-all text-left group">
                     <div className="flex items-center justify-between text-[10px] text-text-secondary mb-1.5">
-                        <span className="flex items-center gap-1"><TrendingUp size={10} /> Progress</span>
+                        <span className="flex items-center gap-1"><TrendingUp size={10} /> {t('progress')}</span>
                         <span className="text-accent-cyan font-mono">{progressLabel}</span>
                     </div>
                     <ProgressBar fraction={progressFraction} size="md" />
-                    <p className="text-[9px] text-text-muted mt-1.5 group-hover:text-accent-cyan transition-colors">Click to update</p>
+                    <p className="text-[9px] text-text-muted mt-1.5 group-hover:text-accent-cyan transition-colors">{t('click_update')}</p>
                 </button>
             )}
 
             {/* Quick log-progress chip for WATCHING with no progress yet */}
-            {localItem.status === 'WATCHING' && progressFraction === null && (
+            {localItem!.status === 'WATCHING' && progressFraction === null && (
                 <button onClick={() => setEditing(true)}
                     className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-border text-text-muted hover:border-accent-cyan hover:text-accent-cyan transition-all text-xs font-medium">
-                    <TrendingUp size={14} /> Log Progress
+                    <TrendingUp size={14} /> {t('log_progress')}
                 </button>
             )}
 
@@ -189,7 +200,7 @@ export function MediaActionPanel({ baseItem, userMediaItem, session, urlId }: an
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-border bg-bg-card font-bold tracking-wide transition-all text-text-secondary hover:border-text-muted hover:text-text-primary"
             >
                 <ListPlus size={18} />
-                ADD TO LIST
+                {t('add_list')}
             </button>
 
             {showAddToList && (
@@ -199,7 +210,8 @@ export function MediaActionPanel({ baseItem, userMediaItem, session, urlId }: an
     )
 }
 
-function FavoriteButton({ item, isFav, toggleFavorite }: any) {
+function FavoriteButton({ item, isFav, toggleFavorite }: { item: any, isFav: boolean, toggleFavorite: (data: any) => void }) {
+    const t = useTranslations('MediaDetail')
     return (
         <button
             onClick={() => toggleFavorite({
@@ -213,7 +225,7 @@ function FavoriteButton({ item, isFav, toggleFavorite }: any) {
                 }`}
         >
             <Heart size={18} fill={isFav ? 'currentColor' : 'none'} />
-            {isFav ? 'FAVORITED' : 'ADD TO FAVORITES'}
+            {isFav ? t('favorited') : t('add_favorites')}
         </button>
     )
 }

@@ -6,6 +6,7 @@ import { DiscussionThreadView } from '@/components/DiscussionThreadView'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Film } from 'lucide-react'
+import Image from 'next/image'
 
 export default async function DiscussionThreadPage({ params }: { params: { id: string } }) {
     const session = await getServerSession(authOptions)
@@ -60,8 +61,14 @@ export default async function DiscussionThreadPage({ params }: { params: { id: s
                 <div className="glass-card p-6 rounded-2xl mb-8 bg-bg-card/80 backdrop-blur-xl">
                     <div className="flex gap-4 items-start">
                         {thread.mediaPosterUrl && (
-                            <div className="w-16 h-24 rounded-xl overflow-hidden shrink-0 border border-border/50 shadow-md">
-                                <img src={thread.mediaPosterUrl} alt="" className="w-full h-full object-cover" />
+                            <div className="relative w-16 h-24 rounded-xl overflow-hidden shrink-0 border border-border/50 shadow-md">
+                                <Image 
+                                    src={thread.mediaPosterUrl} 
+                                    alt="" 
+                                    fill
+                                    sizes="64px"
+                                    className="object-cover" 
+                                />
                             </div>
                         )}
                         <div className="flex-1 min-w-0">
@@ -76,7 +83,17 @@ export default async function DiscussionThreadPage({ params }: { params: { id: s
                             <div className="flex items-center gap-2 mt-2 text-xs text-text-muted">
                                 {thread.author && (
                                     <span className="flex items-center gap-1.5">
-                                        {thread.author.image && <img src={thread.author.image} alt="" className="w-4 h-4 rounded-full" />}
+                                        {thread.author.image && (
+                                            <div className="relative w-4 h-4 shrink-0 overflow-hidden rounded-full">
+                                                <Image 
+                                                    src={thread.author.image} 
+                                                    alt="" 
+                                                    fill
+                                                    sizes="16px"
+                                                    className="object-cover" 
+                                                />
+                                            </div>
+                                        )}
                                         Started by <strong className="text-text-primary">@{thread.author.username}</strong>
                                     </span>
                                 )}

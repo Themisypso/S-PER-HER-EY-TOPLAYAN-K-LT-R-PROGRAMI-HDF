@@ -5,13 +5,23 @@ import { X, Loader2, Plus, List as ListIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 
+import { BaseMedia } from '@/types/media'
+
+interface List {
+    id: string
+    title: string
+    _count?: {
+        items: number
+    }
+}
+
 interface AddToListModalProps {
-    item: any
+    item: any // Keeping as any for now as it maps to many sources
     onClose: () => void
 }
 
 export function AddToListModal({ item, onClose }: AddToListModalProps) {
-    const [lists, setLists] = useState<any[]>([])
+    const [lists, setLists] = useState<List[]>([])
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState<string | null>(null)
 
@@ -94,7 +104,7 @@ export function AddToListModal({ item, onClose }: AddToListModalProps) {
                         </div>
                     ) : lists.length === 0 ? (
                         <div className="text-center py-6">
-                            <p className="text-sm text-text-muted mb-3">You don't have any lists yet.</p>
+                            <p className="text-sm text-text-muted mb-3">You don&apos;t have any lists yet.</p>
                             <Link href="/lists" onClick={onClose} className="text-xs font-bold text-accent-cyan hover:underline">
                                 Go create a list
                             </Link>

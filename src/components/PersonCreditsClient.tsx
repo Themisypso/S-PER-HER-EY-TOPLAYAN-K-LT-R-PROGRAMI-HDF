@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { Film, Clapperboard, Star, Check, Plus, Loader2, Tv } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -114,9 +115,15 @@ export function PersonCreditsClient({ initialData, isLoggedIn }: PersonCreditsCl
                     return (
                         <div key={`${credit.id}-${idx}`} className="glass-card flex gap-4 p-4 rounded-2xl border border-border hover:border-accent-cyan/50 transition-all group/card">
                             {/* Small Poster */}
-                            <div className="w-16 h-24 flex-shrink-0 rounded-xl overflow-hidden border border-border bg-bg-primary shadow-lg">
+                            <div className="w-16 h-24 flex-shrink-0 rounded-xl overflow-hidden border border-border bg-bg-primary shadow-lg relative">
                                 {credit.posterUrl ? (
-                                    <img src={credit.posterUrl} alt={credit.title} className="w-full h-full object-cover group-hover/card:scale-110 transition-transform duration-500" />
+                                    <Image 
+                                        src={credit.posterUrl} 
+                                        alt={credit.title} 
+                                        fill
+                                        sizes="64px"
+                                        className="object-cover group-hover/card:scale-110 transition-transform duration-500" 
+                                    />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center opacity-20">
                                         {credit.mediaType === 'tv' ? <Tv size={20} /> : <Film size={20} />}

@@ -1,9 +1,11 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { Play, BookOpen, Film, Tv, Gamepad2 } from 'lucide-react'
 import { ProgressBar } from './ProgressBar'
 import { calcProgressFraction, formatProgressLabel } from '@/lib/utils/media'
+import { useTranslations } from 'next-intl'
 
 interface InProgressItem {
     id: string
@@ -40,20 +42,21 @@ const TYPE_COLORS: Record<string, string> = {
     GAME: 'var(--accent-pink)',
 }
 
-function relativeTime(dateStr: string | null): string {
+function relativeTime(dateStr: string | null, t: any): string {
     if (!dateStr) return ''
     const diff = Date.now() - new Date(dateStr).getTime()
     const mins = Math.floor(diff / 60000)
-    if (mins < 60) return `${mins}m ago`
+    if (mins < 60) return t('min_ago', { m: mins })
     const hrs = Math.floor(mins / 60)
-    if (hrs < 24) return `${hrs}h ago`
-    return `${Math.floor(hrs / 24)}d ago`
+    if (hrs < 24) return t('h_ago', { h: hrs })
+    return t('d_ago', { d: Math.floor(hrs / 24) })
 }
 
 export function InProgressCard({ item }: InProgressCardProps) {
     const fraction = calcProgressFraction(item)
     const label = formatProgressLabel(item)
     const color = TYPE_COLORS[item.type] ?? 'var(--accent-cyan)'
+    const t = useTranslations('Dashboard')
 
     // Determine the "Continue" link based on media type
     let href = '/library'
@@ -70,7 +73,13 @@ export function InProgressCard({ item }: InProgressCardProps) {
             {/* Poster thumbnail */}
             <div className="relative w-14 flex-shrink-0 rounded-xl overflow-hidden bg-bg-secondary aspect-[2/3] self-center">
                 {item.posterUrl ? (
-                    <img src={item.posterUrl} alt={item.title} className="w-full h-full object-cover" loading="lazy" />
+                    <Image 
+                        src={item.posterUrl} 
+                        alt={item.title} 
+                        fill 
+                        sizes="56px"
+                        className="object-cover" 
+                    />
                 ) : (
                     <div className="w-full h-full flex items-center justify-center text-text-muted">
                         {TYPE_ICONS[item.type]}
@@ -86,7 +95,7 @@ export function InProgressCard({ item }: InProgressCardProps) {
                             {TYPE_ICONS[item.type]} {item.type}
                         </span>
                         {item.lastProgressAt && (
-                            <span className="text-[9px] text-text-muted">{relativeTime(item.lastProgressAt)}</span>
+                            <span className="text-[9px] text-text-muted">{relativeTime(item.lastProgressAt, t)}</span>
                         )}
                     </div>
 
@@ -111,7 +120,7 @@ export function InProgressCard({ item }: InProgressCardProps) {
                     className="mt-2 flex items-center gap-1.5 text-[10px] font-bold text-text-secondary hover:text-accent-cyan transition-colors group-hover:text-accent-cyan"
                 >
                     <Play size={10} className="fill-current" />
-                    Continue
+                    {t('continue')}
                 </Link>
             </div>
         </div>

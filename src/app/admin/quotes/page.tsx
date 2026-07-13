@@ -85,7 +85,7 @@ export default function AdminQuotesPage() {
                     {quotes.map(quote => (
                         <GlassCard key={quote.id} className="p-4 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
                             <div className="flex-1 min-w-0">
-                                <p className="text-text-primary font-medium mb-1 line-clamp-2">"{quote.content}"</p>
+                                <p className="text-text-primary font-medium mb-1 line-clamp-2">&quot;{quote.content}&quot;</p>
                                 <p className="text-xs text-text-muted flex items-center gap-2">
                                     <span className="text-accent-cyan">@{quote.user.username}</span>
                                     <span>•</span>

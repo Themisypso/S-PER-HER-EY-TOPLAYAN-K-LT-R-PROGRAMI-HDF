@@ -2,7 +2,9 @@
 
 import { useState, useRef } from 'react'
 import { MessageSquareQuote, X, ImagePlus, Video, Loader2, Trash2 } from 'lucide-react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 
 interface AddQuoteCTAProps {
     tmdbId: string
@@ -24,6 +26,7 @@ export function AddQuoteCTA({ tmdbId, type, title, posterUrl, backdropUrl, relea
     const [uploadError, setUploadError] = useState<string | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
     const router = useRouter()
+    const t = useTranslations('MediaDetail')
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -106,7 +109,7 @@ export function AddQuoteCTA({ tmdbId, type, title, posterUrl, backdropUrl, relea
                 onClick={() => setIsOpen(true)}
                 className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl border border-accent-pink/50 text-accent-pink bg-accent-pink/5 hover:bg-accent-pink/10 transition-colors font-semibold"
             >
-                <MessageSquareQuote size={18} /> Add a Quote
+                <MessageSquareQuote size={18} /> {t('add_quote')}
             </button>
 
             {isOpen && (
@@ -114,7 +117,7 @@ export function AddQuoteCTA({ tmdbId, type, title, posterUrl, backdropUrl, relea
                     <div className="bg-bg-card border border-border w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
                         <div className="p-5 border-b border-border flex items-center justify-between bg-bg-secondary/50">
                             <h3 className="text-xl font-display font-bold text-text-primary flex items-center gap-2">
-                                <MessageSquareQuote size={20} className="text-accent-pink" /> Add a Quote
+                                <MessageSquareQuote size={20} className="text-accent-pink" /> {t('add_quote')}
                             </h3>
                             <button onClick={handleClose} className="p-2 text-text-muted hover:text-text-primary rounded-lg hover:bg-bg-primary transition-colors">
                                 <X size={20} />
@@ -124,11 +127,11 @@ export function AddQuoteCTA({ tmdbId, type, title, posterUrl, backdropUrl, relea
                         <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-5">
                             {/* Quote Text */}
                             <div>
-                                <label className="block text-sm font-medium text-text-secondary mb-2">Quote Content *</label>
+                                <label className="block text-sm font-medium text-text-secondary mb-2">{t('quote_content_label')}</label>
                                 <textarea
                                     required
                                     rows={4}
-                                    placeholder="Write the iconic dialogue here..."
+                                    placeholder={t('quote_placeholder_text')}
                                     value={content}
                                     onChange={e => setContent(e.target.value)}
                                     className="w-full bg-bg-primary border border-border rounded-xl px-4 py-3 text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-pink focus:ring-1 focus:ring-accent-pink resize-none transition-shadow font-serif italic text-lg"
@@ -137,10 +140,10 @@ export function AddQuoteCTA({ tmdbId, type, title, posterUrl, backdropUrl, relea
 
                             {/* Reference */}
                             <div>
-                                <label className="block text-sm font-medium text-text-secondary mb-2">Reference / Context (Optional)</label>
+                                <label className="block text-sm font-medium text-text-secondary mb-2">{t('reference_label')}</label>
                                 <input
                                     type="text"
-                                    placeholder="e.g. Season 2 Episode 4, or Page 42"
+                                    placeholder={t('reference_placeholder')}
                                     value={reference}
                                     onChange={e => setReference(e.target.value)}
                                     className="w-full bg-bg-primary border border-border rounded-xl px-4 py-3 text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-pink focus:ring-1 focus:ring-accent-pink transition-shadow"
@@ -150,15 +153,21 @@ export function AddQuoteCTA({ tmdbId, type, title, posterUrl, backdropUrl, relea
                             {/* Attachment */}
                             <div>
                                 <label className="block text-sm font-medium text-text-secondary mb-2 flex items-center gap-2">
-                                    <ImagePlus size={15} /> Attach Image or Video (Optional)
+                                    <ImagePlus size={15} /> {t('attach_media')}
                                 </label>
 
                                 {attachmentUrl ? (
-                                    <div className="relative rounded-xl overflow-hidden border border-border/60 group">
+                                    <div className="relative rounded-xl overflow-hidden border border-border/60 group aspect-video">
                                         {attachmentType === 'IMAGE' ? (
-                                            <img src={attachmentUrl} alt="attachment preview" className="w-full max-h-48 object-contain bg-bg-secondary" />
+                                            <Image 
+                                                src={attachmentUrl} 
+                                                alt="attachment preview" 
+                                                fill
+                                                sizes="(max-width: 512px) 100vw, 512px"
+                                                className="object-contain bg-bg-secondary" 
+                                            />
                                         ) : (
-                                            <video src={attachmentUrl} controls className="w-full max-h-48 bg-bg-secondary" />
+                                            <video src={attachmentUrl} controls className="w-full h-full bg-bg-secondary" />
                                         )}
                                         <button
                                             type="button"
@@ -176,9 +185,9 @@ export function AddQuoteCTA({ tmdbId, type, title, posterUrl, backdropUrl, relea
                                         className="w-full border border-dashed border-border rounded-xl p-4 flex flex-col items-center gap-2 text-text-muted hover:border-accent-pink/50 hover:text-accent-pink transition-colors disabled:opacity-50"
                                     >
                                         {uploading ? (
-                                            <><Loader2 size={20} className="animate-spin" /><span className="text-sm">Uploading...</span></>
+                                            <><Loader2 size={20} className="animate-spin" /><span className="text-sm">{t('uploading')}</span></>
                                         ) : (
-                                            <><div className="flex gap-3 text-xl"><ImagePlus size={20} /><Video size={20} /></div><span className="text-sm">Click to upload image or video</span><span className="text-xs opacity-60">Max 20MB</span></>
+                                            <><div className="flex gap-3 text-xl"><ImagePlus size={20} /><Video size={20} /></div><span className="text-sm">{t('click_upload')}</span><span className="text-xs opacity-60">{t('max_size')}</span></>
                                         )}
                                     </button>
                                 )}
@@ -201,14 +210,14 @@ export function AddQuoteCTA({ tmdbId, type, title, posterUrl, backdropUrl, relea
                                     onClick={handleClose}
                                     className="flex-1 py-3.5 rounded-xl font-semibold text-text-secondary hover:bg-bg-secondary transition-colors"
                                 >
-                                    Cancel
+                                    {t('cancel')}
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={isSubmitting || !content.trim()}
                                     className="flex-1 py-3.5 rounded-xl font-bold bg-accent-pink text-white hover:bg-accent-pink/90 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
                                 >
-                                    {isSubmitting ? <><Loader2 size={16} className="animate-spin" /> Posting…</> : 'Post Quote'}
+                                    {isSubmitting ? <><Loader2 size={16} className="animate-spin" /> {t('posting')}</> : t('post_quote')}
                                 </button>
                             </div>
                         </form>

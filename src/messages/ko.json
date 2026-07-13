@@ -1,0 +1,33 @@
+{
+  "Navbar": {
+    "dashboard": "대시보드",
+    "explore": "탐색",
+    "library": "라이브러리",
+    "trending": "트렌딩",
+    "global_search": "검색...",
+    "login": "로그인",
+    "register": "가입하기",
+    "my_profile": "내 프로필",
+    "settings": "설정",
+    "manage_friends": "친구 관리",
+    "admin_panel": "관리자 패널",
+    "logout": "로그아웃"
+  },
+  "Dashboard": {
+    "title": "대시보드",
+    "welcome": "환영합니다",
+    "total_time": "총 시간",
+    "watching": "시청 중",
+    "planned": "예정",
+    "completed": "완료",
+    "recently_watched": "최근 시청",
+    "activity_feed": "활동 피드"
+  },
+  "Settings": {
+    "title": "프로필 설정",
+    "subtitle": "네트워크에서 공개 프로필, 연결 및 개인 정보 보호 설정을 관리하세요.",
+    "general": "일반",
+    "security": "보안",
+    "integrations": "연동"
+  }
+}

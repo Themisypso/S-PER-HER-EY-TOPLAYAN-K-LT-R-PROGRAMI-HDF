@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { Sparkles, Star } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 interface RecItem {
     id: string
@@ -17,6 +19,7 @@ interface RecItem {
 export function RecommendationsCarousel() {
     const [recs, setRecs] = useState<RecItem[]>([])
     const [loading, setLoading] = useState(true)
+    const t = useTranslations('Dashboard')
 
     useEffect(() => {
         fetch('/api/recommendations')
@@ -32,7 +35,7 @@ export function RecommendationsCarousel() {
         return (
             <div className="mb-12">
                 <h2 className="font-display text-xl font-bold flex items-center gap-2 mb-4 text-text-primary">
-                    <Sparkles className="text-accent-pink" /> Recommended For You
+                    <Sparkles className="text-accent-pink" /> {t('recommended')}
                 </h2>
                 <div className="flex gap-4 overflow-hidden">
                     {[1, 2, 3, 4, 5, 6].map(i => (
@@ -49,8 +52,8 @@ export function RecommendationsCarousel() {
         <section className="mb-12 animate-fade-in relative z-10 w-full overflow-hidden">
             <h2 className="font-display text-xl font-bold flex items-center gap-2 mb-4 text-text-primary">
                 <Sparkles className="text-accent-pink" />
-                Recommended For You
-                <span className="text-xs font-normal text-text-muted bg-bg-secondary px-2 py-0.5 rounded-full border border-border">Based on your favorites</span>
+                {t('recommended')}
+                <span className="text-xs font-normal text-text-muted bg-bg-secondary px-2 py-0.5 rounded-full border border-border">{t('based_favorites')}</span>
             </h2>
 
             <div className="flex gap-4 overflow-x-auto pb-6 pt-2 px-2 -mx-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent snap-x">
@@ -62,7 +65,13 @@ export function RecommendationsCarousel() {
                     >
                         <div className="relative aspect-[2/3] w-full bg-bg-secondary">
                             {item.posterUrl ? (
-                                <img src={item.posterUrl} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                <Image
+                                    src={item.posterUrl}
+                                    alt={item.title}
+                                    fill
+                                    sizes="(max-width: 768px) 144px, 176px"
+                                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                />
                             ) : (
                                 <div className="flex items-center justify-center h-full p-4 text-center text-xs text-text-muted">{item.title}</div>
                             )}
@@ -70,7 +79,7 @@ export function RecommendationsCarousel() {
                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                             <div className="absolute bottom-2 left-2 right-2 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none">
                                 <p className="text-[10px] text-white line-clamp-2 leading-tight drop-shadow-md">
-                                    {item.overview || 'No overview available.'}
+                                    {item.overview || t('no_overview')}
                                 </p>
                             </div>
 

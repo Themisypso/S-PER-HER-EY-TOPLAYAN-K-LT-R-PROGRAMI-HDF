@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { Send, Loader2, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { CommentBubble } from '@/components/CommentBubble'
 
 interface Comment {
@@ -108,7 +109,15 @@ export function DiscussionThreadView({ threadId, initialComments, currentUserId,
                 {session ? (
                     <form onSubmit={handleSubmit} className="flex gap-3">
                         {currentUserImage ? (
-                            <img src={currentUserImage} alt="" className="w-9 h-9 rounded-full object-cover shrink-0 mt-0.5 border border-border" />
+                            <div className="relative w-9 h-9 shrink-0 mt-0.5">
+                                <Image 
+                                    src={currentUserImage} 
+                                    alt="" 
+                                    fill
+                                    sizes="36px"
+                                    className="rounded-full object-cover border border-border" 
+                                />
+                            </div>
                         ) : (
                             <div className="w-9 h-9 rounded-full bg-accent-purple/10 border border-accent-purple/30 flex items-center justify-center text-sm font-bold text-accent-purple shrink-0 mt-0.5">
                                 {currentUserName?.[0] || session.user?.name?.[0] || 'U'}

@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Star, Clock, Film, ExternalLink, Trash2, Save, TrendingUp } from 'lucide-react'
+import { X, Clock, Film, ExternalLink, Trash2, Save, TrendingUp } from 'lucide-react'
+import Image from 'next/image'
+import { TrendBadge } from './TrendBadge'
 import toast from 'react-hot-toast'
 import { ProgressEditor } from './ProgressEditor'
 import { ProgressBar } from './ProgressBar'
@@ -27,6 +29,9 @@ interface MediaItem {
     tmdbRating?: number | null
     imdbId?: string | null
     tmdbId?: string | null
+    /** Internal Media catalogue ID — used for TrendBadge lookup */
+    mediaId?: string | null
+    steamAppId?: string | null
     // Progress fields
     progress?: number | null
     pageCount?: number | null
@@ -34,6 +39,7 @@ interface MediaItem {
 
 interface MediaDetailModalProps {
     item: MediaItem
+    readOnly?: boolean
     onClose: () => void
     onUpdate: (updated: MediaItem) => void
     onDelete: (id: string) => void
@@ -44,7 +50,7 @@ const STATUS_LABELS: Record<string, string> = {
     WATCHING: '▶ In Progress', COMPLETED: '✓ Completed', PLANNED: '+ Planned', DROPPED: '✕ Dropped'
 }
 
-export function MediaDetailModal({ item, onClose, onUpdate, onDelete }: MediaDetailModalProps) {
+export function MediaDetailModal({ item, readOnly = false, onClose, onUpdate, onDelete }: MediaDetailModalProps) {
     const [status, setStatus] = useState(item.status)
     const [rating, setRating] = useState(item.userRating ?? 0)
     const [hoverRating, setHoverRating] = useState(0)
@@ -55,6 +61,7 @@ export function MediaDetailModal({ item, onClose, onUpdate, onDelete }: MediaDet
     const [localItem, setLocalItem] = useState(item)
     const [saving, setSaving] = useState(false)
     const [deleting, setDeleting] = useState(false)
+    const [addingToLib, setAddingToLib] = useState(false)
 
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
@@ -102,6 +109,46 @@ export function MediaDetailModal({ item, onClose, onUpdate, onDelete }: MediaDet
         setDeleting(false)
     }
 
+    async function handleAddToLibrary() {
+        setAddingToLib(true)
+        try {
+            const payload = {
+                title: item.title,
+                type: item.type,
+                status: 'PLANNED', // default status
+                tmdbId: item.tmdbId,
+                rawgId: item.rawgId,
+                bookId: item.bookId,
+                steamAppId: item.steamAppId,
+                posterUrl: item.posterUrl,
+                backdropUrl: item.backdropUrl,
+                genres: item.genres,
+                releaseYear: item.releaseYear,
+                overview: item.overview,
+                tmdbRating: item.tmdbRating,
+                runtime: item.runtime,
+                episodeCount: item.episodeCount,
+                episodeDuration: item.episodeDuration
+            }
+
+            const res = await fetch('/api/media', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+
+            if (!res.ok) {
+                const data = await res.json()
+                throw new Error(data.error || 'Failed to add')
+            }
+            
+            toast.success('Added to your library!')
+        } catch(e: any) {
+            toast.error(e.message || 'Failed to add')
+        }
+        setAddingToLib(false)
+    }
+
     function formatTime(min: number | null) {
         if (!min) return null
         const h = Math.floor(min / 60); const m = min % 60
@@ -117,7 +164,13 @@ export function MediaDetailModal({ item, onClose, onUpdate, onDelete }: MediaDet
                 {/* Backdrop header */}
                 {item.backdropUrl && (
                     <div className="relative h-48 overflow-hidden rounded-t-2xl">
-                        <img src={item.backdropUrl} alt="" className="w-full h-full object-cover" />
+                        <Image 
+                            src={item.backdropUrl} 
+                            alt="" 
+                            fill 
+                            priority
+                            className="w-full h-full object-cover" 
+                        />
                         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-bg-secondary" />
                         <button onClick={onClose} className="absolute top-3 right-3 p-2 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors">
                             <X size={16} />
@@ -135,9 +188,15 @@ export function MediaDetailModal({ item, onClose, onUpdate, onDelete }: MediaDet
                                 </button>
                             </div>
                         )}
-                        <div className="w-36 rounded-xl overflow-hidden shadow-card flex-shrink-0" style={{ minWidth: 144 }}>
+                        <div className="w-36 rounded-xl overflow-hidden shadow-card flex-shrink-0 relative aspect-[2/3]" style={{ minWidth: 144 }}>
                             {item.posterUrl ? (
-                                <img src={item.posterUrl} alt={item.title} className="w-full aspect-[2/3] object-cover" />
+                                <Image 
+                                    src={item.posterUrl} 
+                                    alt={item.title} 
+                                    fill
+                                    sizes="144px"
+                                    className="object-cover" 
+                                />
                             ) : (
                                 <div className="w-full aspect-[2/3] bg-bg-hover flex items-center justify-center">
                                     <Film size={32} className="text-text-muted" />
@@ -176,19 +235,23 @@ export function MediaDetailModal({ item, onClose, onUpdate, onDelete }: MediaDet
                                     ))}
                                 </div>
                             )}
+                            {/* Trending rank badges — hidden for books */}
+                            {item.type !== 'BOOK' && (
+                                <TrendBadge mediaId={item.mediaId} mediaType={item.type} />
+                            )}
                             {item.overview && (
                                 <p className="text-xs text-text-secondary mt-3 line-clamp-3 leading-relaxed">{item.overview}</p>
                             )}
                         </div>
 
-                        <div className="cyber-line my-4" />
+                        <div className="h-px bg-border my-4" />
 
                         {/* Editable fields */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {/* Status */}
                             <div>
                                 <label className="block text-xs text-text-secondary mb-1.5 font-medium uppercase tracking-wider">Status</label>
-                                <select value={status} onChange={e => setStatus(e.target.value)} className="input-cyber" id={`status-${item.id}`}>
+                                <select value={status} onChange={e => setStatus(e.target.value)} disabled={readOnly || saving} className="input-cyber" id={`status-${item.id}`}>
                                     {STATUS_OPTIONS.map(s => (
                                         <option key={s} value={s}>{STATUS_LABELS[s]}</option>
                                     ))}
@@ -201,12 +264,12 @@ export function MediaDetailModal({ item, onClose, onUpdate, onDelete }: MediaDet
                                     <div>
                                         <label className="block text-xs text-text-secondary mb-1.5 font-medium uppercase tracking-wider">Total Episodes</label>
                                         <input type="number" min="0" value={episodeCount} onChange={e => setEpisodeCount(e.target.value as any)}
-                                            className="input-cyber" placeholder="e.g. 48" id={`eps-${item.id}`} />
+                                            disabled={readOnly || saving} className="input-cyber" placeholder="e.g. 48" id={`eps-${item.id}`} />
                                     </div>
                                     <div>
                                         <label className="block text-xs text-text-secondary mb-1.5 font-medium uppercase tracking-wider">Episode Duration (min)</label>
                                         <input type="number" min="1" value={episodeDuration} onChange={e => setEpisodeDuration(e.target.value as any)}
-                                            className="input-cyber" placeholder="e.g. 24" id={`dur-${item.id}`} />
+                                            disabled={readOnly || saving} className="input-cyber" placeholder="e.g. 24" id={`dur-${item.id}`} />
                                     </div>
                                 </>
                             )}
@@ -216,7 +279,7 @@ export function MediaDetailModal({ item, onClose, onUpdate, onDelete }: MediaDet
                                 <div>
                                     <label className="block text-xs text-text-secondary mb-1.5 font-medium uppercase tracking-wider">Playtime (hours)</label>
                                     <input type="number" min="0" step="0.5" value={playtimeHours} onChange={e => setPlaytimeHours(e.target.value as any)}
-                                        className="input-cyber" placeholder="e.g. 120" id={`play-${item.id}`} />
+                                        disabled={readOnly || saving} className="input-cyber" placeholder="e.g. 120" id={`play-${item.id}`} />
                                 </div>
                             )}
 
@@ -232,7 +295,7 @@ export function MediaDetailModal({ item, onClose, onUpdate, onDelete }: MediaDet
                         </div>
 
                         {/* ─── Progress Editor ─────────────────────────────────────────────────── */}
-                        {(status === 'WATCHING') && (
+                        {(status === 'WATCHING' && !readOnly) && (
                             <div className="mt-4">
                                 <label className="block text-xs text-text-secondary mb-2 font-medium uppercase tracking-wider flex items-center gap-1.5">
                                     <TrendingUp size={11} /> Progress
@@ -248,16 +311,19 @@ export function MediaDetailModal({ item, onClose, onUpdate, onDelete }: MediaDet
 
                         {/* Star Rating */}
                         <div className="mt-4">
-                            <label className="block text-xs text-text-secondary mb-2 font-medium uppercase tracking-wider">Your Rating</label>
+                            <label className="block text-xs text-text-secondary mb-2 font-medium uppercase tracking-wider">
+                                {readOnly ? 'Their Rating' : 'Your Rating'}
+                            </label>
                             <div className="flex gap-1">
                                 {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
                                     <button key={n} type="button"
-                                        onClick={() => setRating(rating === n ? 0 : n)}
-                                        onMouseEnter={() => setHoverRating(n)}
-                                        onMouseLeave={() => setHoverRating(0)}
-                                        className="star"
+                                        onClick={() => !readOnly && setRating(rating === n ? 0 : n)}
+                                        onMouseEnter={() => !readOnly && setHoverRating(n)}
+                                        onMouseLeave={() => !readOnly && setHoverRating(0)}
+                                        className={`star ${readOnly ? 'cursor-default' : ''}`}
                                         style={{ color: n <= (hoverRating || rating) ? '#ffd700' : 'var(--border-bright)' }}
                                         aria-label={`Rate ${n}`}
+                                        disabled={readOnly || saving}
                                     >★</button>
                                 ))}
                                 {(rating > 0) && <span className="text-sm text-[#ffd700] ml-2 self-center font-bold">{rating}/10</span>}
@@ -266,9 +332,12 @@ export function MediaDetailModal({ item, onClose, onUpdate, onDelete }: MediaDet
 
                         {/* Notes */}
                         <div className="mt-4">
-                            <label className="block text-xs text-text-secondary mb-1.5 font-medium uppercase tracking-wider">Notes</label>
+                            <label className="block text-xs text-text-secondary mb-1.5 font-medium uppercase tracking-wider">
+                                {readOnly ? 'Their Notes' : 'Notes'}
+                            </label>
                             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3}
-                                placeholder="Your thoughts..." className="input-cyber resize-none" id={`notes-${item.id}`} />
+                                disabled={readOnly || saving}
+                                placeholder={readOnly ? "No notes added." : "Your thoughts..."} className="input-cyber resize-none" id={`notes-${item.id}`} />
                         </div>
 
                         {/* Total time */}
@@ -282,7 +351,7 @@ export function MediaDetailModal({ item, onClose, onUpdate, onDelete }: MediaDet
                         {/* Quotes Section */}
                         <div className="mt-6 border-t border-border pt-4">
                             <h3 className="text-sm font-bold text-text-secondary uppercase tracking-wider mb-3">Quotes</h3>
-                            <QuotesSection mediaId={item.id} />
+                            <QuotesSection mediaId={item.id} readOnly={readOnly} />
                         </div>
 
                         {/* Similar Recommendations Section */}
@@ -295,14 +364,23 @@ export function MediaDetailModal({ item, onClose, onUpdate, onDelete }: MediaDet
 
                         {/* Actions */}
                         <div className="flex items-center gap-3 mt-5">
-                            <button onClick={handleSave} disabled={saving} className="btn-primary flex items-center gap-2 flex-1 justify-center">
-                                <Save size={15} />
-                                {saving ? 'Saving...' : 'Save Changes'}
-                            </button>
-                            <button onClick={handleDelete} disabled={deleting} className="btn-danger flex items-center gap-2">
-                                <Trash2 size={15} />
-                                {deleting ? '...' : 'Remove'}
-                            </button>
+                            {readOnly ? (
+                                <button onClick={handleAddToLibrary} disabled={addingToLib} className="btn-primary flex items-center gap-2 flex-1 justify-center bg-accent-pink hover:bg-accent-pink/80 border-accent-pink/50">
+                                    <Sparkles size={15} />
+                                    {addingToLib ? 'Adding...' : 'Add to My Library'}
+                                </button>
+                            ) : (
+                                <>
+                                    <button onClick={handleSave} disabled={saving} className="btn-primary flex items-center gap-2 flex-1 justify-center">
+                                        <Save size={15} />
+                                        {saving ? 'Saving...' : 'Save Changes'}
+                                    </button>
+                                    <button onClick={handleDelete} disabled={deleting} className="btn-danger flex items-center gap-2">
+                                        <Trash2 size={15} />
+                                        {deleting ? '...' : 'Remove'}
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -311,7 +389,7 @@ export function MediaDetailModal({ item, onClose, onUpdate, onDelete }: MediaDet
     )
 }
 
-function QuotesSection({ mediaId }: { mediaId: string }) {
+function QuotesSection({ mediaId, readOnly }: { mediaId: string, readOnly?: boolean }) {
     const [quotes, setQuotes] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [content, setContent] = useState('')
@@ -347,23 +425,25 @@ function QuotesSection({ mediaId }: { mediaId: string }) {
 
     return (
         <div className="space-y-4">
-            <div className="flex gap-2">
-                <input
-                    type="text"
-                    value={content}
-                    onChange={e => setContent(e.target.value)}
-                    placeholder="Add a memorable quote..."
-                    className="input-cyber flex-1 text-sm bg-bg-secondary border-border"
-                    onKeyDown={e => e.key === 'Enter' && addQuote()}
-                />
-                <button
-                    onClick={addQuote}
-                    disabled={saving || !content.trim()}
-                    className="btn-primary px-3 py-1.5 text-xs whitespace-nowrap"
-                >
-                    {saving ? 'Adding...' : 'Add Quote'}
-                </button>
-            </div>
+            {!readOnly && (
+                <div className="flex gap-2">
+                    <input
+                        type="text"
+                        value={content}
+                        onChange={e => setContent(e.target.value)}
+                        placeholder="Add a memorable quote..."
+                        className="input-cyber flex-1 text-sm bg-bg-secondary border-border"
+                        onKeyDown={e => e.key === 'Enter' && addQuote()}
+                    />
+                    <button
+                        onClick={addQuote}
+                        disabled={saving || !content.trim()}
+                        className="btn-primary px-3 py-1.5 text-xs whitespace-nowrap"
+                    >
+                        {saving ? 'Adding...' : 'Add Quote'}
+                    </button>
+                </div>
+            )}
 
             {loading ? (
                 <div className="h-10 rounded-xl shimmer"></div>
@@ -373,7 +453,7 @@ function QuotesSection({ mediaId }: { mediaId: string }) {
                 <ul className="space-y-2 max-h-40 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
                     {quotes.map(q => (
                         <li key={q.id} className="p-3 glass-card rounded-lg text-sm text-text-primary border-l-2 border-l-accent-cyan italic">
-                            "{q.content}"
+                            &quot;{q.content}&quot;
                         </li>
                     ))}
                 </ul>
@@ -412,10 +492,12 @@ function SimilarTitles({ mediaId, type }: { mediaId: string, type: string }) {
                     title={item.title || item.name}
                 >
                     {item.poster_path ? (
-                        <img
-                            src={`https://image.tmdb.org/t/p/w154${item.poster_path}`}
+                        <Image
+                            src={`https://image.tmdb.org/t/p/w185${item.poster_path}`}
                             alt=""
-                            className="w-full aspect-[2/3] object-cover group-hover:scale-110 transition-transform duration-300"
+                            fill
+                            sizes="80px"
+                            className="object-cover group-hover:scale-110 transition-transform duration-300"
                         />
                     ) : (
                         <div className="w-full aspect-[2/3] bg-bg-hover"></div>

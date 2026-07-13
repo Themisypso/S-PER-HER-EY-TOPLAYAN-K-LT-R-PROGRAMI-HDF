@@ -1,0 +1,33 @@
+{
+  "Navbar": {
+    "dashboard": "Tableau de bord",
+    "explore": "Explorer",
+    "library": "Bibliothèque",
+    "trending": "Tendances",
+    "global_search": "Rechercher...",
+    "login": "Se connecter",
+    "register": "S'inscrire",
+    "my_profile": "Mon profil",
+    "settings": "Paramètres",
+    "manage_friends": "Amis",
+    "admin_panel": "Administration",
+    "logout": "Se déconnecter"
+  },
+  "Dashboard": {
+    "title": "Tableau de bord",
+    "welcome": "Bienvenue",
+    "total_time": "Temps total",
+    "watching": "En cours",
+    "planned": "À voir",
+    "completed": "Terminé",
+    "recently_watched": "Vus récemment",
+    "activity_feed": "Fil d'activité"
+  },
+  "Settings": {
+    "title": "Paramètres du profil",
+    "subtitle": "Gérez votre profil public, vos connexions et vos préférences de confidentialité sur le réseau.",
+    "general": "Général",
+    "security": "Sécurité",
+    "integrations": "Intégrations"
+  }
+}

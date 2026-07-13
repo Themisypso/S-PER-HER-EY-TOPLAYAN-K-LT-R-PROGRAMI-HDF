@@ -5,14 +5,14 @@ import { prisma } from '@/lib/prisma'
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) return new NextResponse('Unauthorized', { status: 401 })
+    if (!session?.user?.id) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
 
     try {
         const body = await req.json()
         const { content } = body
 
         if (!content || !content.trim()) {
-            return new NextResponse('Content is required', { status: 400 })
+            return NextResponse.json({ success: false, error: 'Content is required' }, { status: 400 })
         }
 
         const quote = await prisma.quote.findUnique({
@@ -20,7 +20,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         })
 
         if (!quote) {
-            return new NextResponse('Quote not found', { status: 404 })
+            return NextResponse.json({ success: false, error: 'Quote not found' }, { status: 404 })
         }
 
         const comment = await prisma.comment.create({
@@ -45,9 +45,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             })
         }
 
-        return NextResponse.json(comment)
+        return NextResponse.json({ success: true, data: comment })
     } catch (error) {
         console.error('[QUOTE_COMMENT]', error)
-        return new NextResponse('Internal Error', { status: 500 })
+        return NextResponse.json({ success: false, error: 'Internal Error' }, { status: 500 })
     }
 }

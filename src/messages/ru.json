@@ -1,0 +1,33 @@
+{
+  "Navbar": {
+    "dashboard": "Панель",
+    "explore": "Обзор",
+    "library": "Библиотека",
+    "trending": "В тренде",
+    "global_search": "Поиск...",
+    "login": "Войти",
+    "register": "Регистрация",
+    "my_profile": "Мой профиль",
+    "settings": "Настройки",
+    "manage_friends": "Друзья",
+    "admin_panel": "Панель админа",
+    "logout": "Выйти"
+  },
+  "Dashboard": {
+    "title": "Панель",
+    "welcome": "Добро пожаловать",
+    "total_time": "Общее время",
+    "watching": "Смотрю",
+    "planned": "В планах",
+    "completed": "Просмотрено",
+    "recently_watched": "Недавно просмотренные",
+    "activity_feed": "Лента активности"
+  },
+  "Settings": {
+    "title": "Настройки профиля",
+    "subtitle": "Управляйте своим публичным профилем, связями и настройками конфиденциальности в сети.",
+    "general": "Общие",
+    "security": "Безопасность",
+    "integrations": "Интеграции"
+  }
+}

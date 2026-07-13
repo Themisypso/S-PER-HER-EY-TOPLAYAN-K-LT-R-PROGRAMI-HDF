@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Filter, Loader2, Search, Gamepad2, Star, Monitor } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useMediaFavorites } from '@/hooks/useMediaFavorites'
 import { PosterContextMenu } from '@/components/PosterContextMenu'
@@ -275,10 +276,12 @@ export function BrowseGames() {
                                     <Link href={`/games/${game.slug}`} className="block">
                                         <div className="relative aspect-[16/9] rounded-xl bg-bg-secondary border border-border shadow-card mb-2 group-hover:border-[#00ff9d]/40 transition-all z-10 group-hover:z-50">
                                             {game.posterUrl ? (
-                                                <img
+                                                <Image
                                                     src={game.posterUrl}
                                                     alt={game.title}
-                                                    className="w-full h-full object-cover rounded-xl group-hover:scale-105 transition-transform duration-300"
+                                                    fill
+                                                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                                                    className="object-cover rounded-xl group-hover:scale-105 transition-transform duration-300"
                                                 />
                                             ) : (
                                                 <div className="flex items-center justify-center h-full rounded-xl">

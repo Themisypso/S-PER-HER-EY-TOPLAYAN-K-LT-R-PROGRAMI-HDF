@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Search, Loader2 } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
+import { useTranslations } from 'next-intl'
 
 interface Suggestion {
     id: string
@@ -20,6 +22,7 @@ export function GlobalSearch({ onSelect }: { onSelect?: () => void }) {
     const [loading, setLoading] = useState(false)
     const [suggestions, setSuggestions] = useState<Suggestion[]>([])
     const containerRef = useRef<HTMLDivElement>(null)
+    const t = useTranslations('GlobalSearch')
 
     // Keyboard shortcut to focus search
     useEffect(() => {
@@ -96,7 +99,7 @@ export function GlobalSearch({ onSelect }: { onSelect?: () => void }) {
                     onFocus={() => {
                         if (query.trim()) setOpen(true)
                     }}
-                    placeholder="Search movies, TV shows, anime, games... (Ctrl+K)"
+                    placeholder={t('placeholder')}
                     className="w-full pl-10 pr-12 py-2.5 bg-bg-secondary/50 border border-border group-focus-within:border-accent-cyan group-focus-within:bg-bg-secondary rounded-full text-sm text-text-primary transition-all outline-none shadow-inner placeholder:text-text-muted/70"
                     autoComplete="off"
                 />
@@ -125,7 +128,13 @@ export function GlobalSearch({ onSelect }: { onSelect?: () => void }) {
                                     className="flex items-center gap-3 p-2 hover:bg-bg-secondary rounded-lg transition-colors"
                                 >
                                     {item.image ? (
-                                        <img src={item.image} alt={item.title} className="w-10 h-14 object-cover rounded bg-bg-primary" />
+                                        <Image 
+                                            src={item.image} 
+                                            alt={item.title} 
+                                            width={40} 
+                                            height={56} 
+                                            className="w-10 h-14 object-cover rounded bg-bg-primary" 
+                                        />
                                     ) : (
                                         <div className="w-10 h-14 rounded bg-bg-secondary flex items-center justify-center">
                                             <Search size={16} className="text-text-muted" />
@@ -147,12 +156,12 @@ export function GlobalSearch({ onSelect }: { onSelect?: () => void }) {
                                 type="button"
                                 className="w-full text-center p-2 text-sm text-accent-cyan hover:bg-accent-cyan/10 rounded-lg mt-1 transition-colors"
                             >
-                                View all results for "{query}"
+                                {t('view_all', { query })}
                             </button>
                         </div>
                     ) : !loading ? (
                         <div className="p-4 text-center text-sm text-text-muted">
-                            No results found. Try a different term.
+                            {t('no_results')}
                         </div>
                     ) : null}
                 </div>

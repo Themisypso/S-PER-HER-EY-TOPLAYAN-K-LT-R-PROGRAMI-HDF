@@ -2,13 +2,15 @@
 
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { Navbar } from '@/components/Navbar'
 import { InProgressCard } from '@/components/InProgressCard'
 import { RecommendationsCarousel } from '@/components/RecommendationsCarousel'
 import { ActivityFeed } from '@/components/ActivityFeed'
-import { Clock, Film, Tv, Gamepad2, TrendingUp, CheckCircle, Eye, BookMarked, X, PlayCircle, Sparkles, Users } from 'lucide-react'
+import { Clock, Film, Tv, Gamepad2, TrendingUp, CheckCircle, Eye, BookMarked, X, PlayCircle, Sparkles, Users, Search } from 'lucide-react'
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { useTranslations } from 'next-intl'
 
 interface Analytics {
     overview: {
@@ -49,6 +51,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export default function DashboardPage() {
     const { data: session, status } = useSession()
     const router = useRouter()
+    const t = useTranslations('Dashboard')
     const [analytics, setAnalytics] = useState<Analytics | null>(null)
     const [loading, setLoading] = useState(true)
     const [inProgress, setInProgress] = useState<any[]>([])
@@ -93,14 +96,13 @@ export default function DashboardPage() {
         <div className="min-h-screen bg-bg-primary">
             <Navbar />
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Header */}
                 <div className="mb-8">
                     <h1 className="text-2xl font-display font-bold text-text-primary">
-                        Welcome back, <span className="bg-gradient-to-br from-accent-cyan to-accent-purple text-transparent bg-clip-text">
+                        {t('welcome')}, <span className="bg-gradient-to-br from-accent-cyan to-accent-purple text-transparent bg-clip-text">
                             {session.user?.name?.split(' ')[0] || 'Tracker'}
                         </span>
                     </h1>
-                    <p className="text-sm text-text-secondary mt-1">Here&apos;s your media consumption overview</p>
+                    <p className="text-sm text-text-secondary mt-1">{t('overview')}</p>
                 </div>
 
                 {loading ? (
@@ -109,15 +111,13 @@ export default function DashboardPage() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-                        {/* Main Stats Area */}
                         <div className="xl:col-span-3">
-                            {/* ─── In Progress Section ─────────────────────────────────────────── */}
                             {inProgress.length > 0 && (
                                 <div className="mb-8">
                                     <div className="flex items-center gap-2 mb-4">
                                         <PlayCircle size={18} className="text-accent-cyan" />
-                                        <h2 className="font-display font-semibold text-text-primary">Continue Watching</h2>
-                                        <span className="text-xs text-text-muted ml-1">{inProgress.length} active</span>
+                                        <h2 className="font-display font-semibold text-text-primary">{t('continue_watching')}</h2>
+                                        <span className="text-xs text-text-muted ml-1">{inProgress.length}</span>
                                     </div>
                                     <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
                                         {inProgress.map(item => (
@@ -129,13 +129,12 @@ export default function DashboardPage() {
 
                             <RecommendationsCarousel />
 
-                            {/* Stats cards */}
                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                                 {[
-                                    { label: 'Total Watch Time', value: `${analytics?.overview.totalWatchHours}h`, icon: <Clock size={20} />, color: '#00d4ff', glow: 'stat-glow-cyan' },
-                                    { label: 'Total Play Time', value: `${analytics?.overview.totalPlayHours}h`, icon: <Gamepad2 size={20} />, color: '#7b2fff', glow: 'stat-glow-purple' },
-                                    { label: 'Combined Hours', value: `${analytics?.overview.totalHours}h`, icon: <TrendingUp size={20} />, color: '#ff2d7a', glow: 'stat-glow-pink' },
-                                    { label: 'Items Tracked', value: `${analytics?.overview.totalItems}`, icon: <Film size={20} />, color: '#00ff9d', glow: 'stat-glow-green' },
+                                    { label: t('total_watch_time'), value: `${analytics?.overview.totalWatchHours}h`, icon: <Clock size={20} />, color: '#00d4ff', glow: 'stat-glow-cyan' },
+                                    { label: t('total_play_time'), value: `${analytics?.overview.totalPlayHours}h`, icon: <Gamepad2 size={20} />, color: '#7b2fff', glow: 'stat-glow-purple' },
+                                    { label: t('combined_hours'), value: `${analytics?.overview.totalHours}h`, icon: <TrendingUp size={20} />, color: '#ff2d7a', glow: 'stat-glow-pink' },
+                                    { label: t('items_tracked'), value: `${analytics?.overview.totalItems}`, icon: <Film size={20} />, color: '#00ff9d', glow: 'stat-glow-green' },
                                 ].map(({ label, value, icon, color, glow }) => (
                                     <div key={label} className={`glass-card p-5 ${glow}`}>
                                         <div className="flex items-start justify-between">
@@ -151,19 +150,24 @@ export default function DashboardPage() {
                                 ))}
                             </div>
 
-                            {/* Top Played Games Section */}
                             {analytics?.topGames && analytics.topGames.length > 0 && (
                                 <div className="glass-card p-6 mb-8 animate-fade-in">
                                     <h2 className="font-display font-semibold text-text-primary mb-4 flex items-center gap-2">
                                         <Gamepad2 size={20} className="text-[#00ff9d]" />
-                                        Top Played Games
+                                        {t('top_games')}
                                     </h2>
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                         {analytics.topGames.map((game, i) => (
                                             <div key={game.id} className="flex items-center gap-4 bg-bg-secondary p-4 rounded-xl border border-border hover:border-[#00ff9d]/30 transition-colors">
                                                 <div className="text-xl font-display font-bold text-text-muted w-6 text-center">{i + 1}</div>
                                                 {game.posterUrl ? (
-                                                    <img src={game.posterUrl} alt={game.title} className="w-12 h-16 object-cover rounded-md flex-shrink-0 shadow-md" />
+                                                    <Image 
+                                                        src={game.posterUrl} 
+                                                        alt={game.title} 
+                                                        width={48} 
+                                                        height={64} 
+                                                        className="w-12 h-16 object-cover rounded-md flex-shrink-0 shadow-md" 
+                                                    />
                                                 ) : (
                                                     <div className="w-12 h-16 bg-bg-card rounded-md flex items-center justify-center flex-shrink-0 border border-border/50">
                                                         <Gamepad2 size={24} className="text-text-muted" />
@@ -172,7 +176,7 @@ export default function DashboardPage() {
                                                 <div className="flex-1 min-w-0">
                                                     <h3 className="font-bold text-text-primary truncate text-sm">{game.title}</h3>
                                                     <p className="text-xs text-text-secondary mt-1 font-mono text-[#00ff9d]">
-                                                        {Math.round((game.totalTimeMinutes ?? 0) / 60)} hours
+                                                        {Math.round((game.totalTimeMinutes ?? 0) / 60)} {t('hours')}
                                                     </p>
                                                 </div>
                                             </div>
@@ -182,12 +186,11 @@ export default function DashboardPage() {
                             )}
 
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                                {/* Top Genres Section */}
                                 {analytics?.topGenres && analytics.topGenres.length > 0 && (
                                     <div className="glass-card p-6 animate-fade-in">
                                         <h2 className="font-display font-semibold text-text-primary mb-4 flex items-center gap-2">
                                             <Sparkles size={20} className="text-accent-pink" />
-                                            Your Top Genres
+                                            {t('top_genres')}
                                         </h2>
                                         <div className="flex flex-wrap gap-2">
                                             {analytics.topGenres.map((genre, i) => (
@@ -201,18 +204,23 @@ export default function DashboardPage() {
                                     </div>
                                 )}
 
-                                {/* Favorite People Section */}
                                 {analytics?.favoritePeople && analytics.favoritePeople.length > 0 && (
                                     <div className="glass-card p-6 animate-fade-in">
                                         <h2 className="font-display font-semibold text-text-primary mb-4 flex items-center gap-2">
                                             <Users size={20} className="text-accent-cyan" />
-                                            Favorite Actors & Directors
+                                            {t('favorite_people')}
                                         </h2>
                                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                             {analytics.favoritePeople.map((person) => (
                                                 <div key={person.id} className="flex items-center gap-3 bg-bg-secondary p-2 pr-3 rounded-full border border-border hover:border-accent-cyan transition-colors">
                                                     {person.profileUrl ? (
-                                                        <img src={person.profileUrl} alt={person.name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                                                        <Image 
+                                                            src={person.profileUrl} 
+                                                            alt={person.name} 
+                                                            width={32} 
+                                                            height={32} 
+                                                            className="w-8 h-8 rounded-full object-cover flex-shrink-0" 
+                                                        />
                                                     ) : (
                                                         <div className="w-8 h-8 bg-bg-card rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-accent-cyan">
                                                             {person.name.charAt(0)}
@@ -229,11 +237,9 @@ export default function DashboardPage() {
                                 )}
                             </div>
 
-                            {/* Charts row */}
                             <div className="grid lg:grid-cols-2 gap-6 mb-8">
-                                {/* Pie chart: by type */}
                                 <div className="glass-card p-6">
-                                    <h2 className="font-display font-semibold text-text-primary mb-4">Media Breakdown</h2>
+                                    <h2 className="font-display font-semibold text-text-primary mb-4">{t('media_breakdown')}</h2>
                                     {typeChartData.length > 0 ? (
                                         <ResponsiveContainer width="100%" height={260}>
                                             <PieChart>
@@ -242,18 +248,17 @@ export default function DashboardPage() {
                                                         <Cell key={entry.name} fill={TYPE_COLORS[entry.name] || 'var(--text-secondary)'} />
                                                     ))}
                                                 </Pie>
-                                                <Tooltip formatter={(v: number) => [`${v} items`, 'Count']} contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8 }} />
+                                                <Tooltip formatter={(v: number) => [`${v} ${t('items')}`, t('count')]} contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8 }} />
                                                 <Legend formatter={name => <span style={{ color: TYPE_COLORS[name] || 'var(--text-secondary)', fontSize: 12 }}>{name}</span>} />
                                             </PieChart>
                                         </ResponsiveContainer>
                                     ) : (
-                                        <div className="h-[260px] flex items-center justify-center text-text-muted text-sm">Add media to see breakdown</div>
+                                        <div className="h-[260px] flex items-center justify-center text-text-muted text-sm">{t('add_media_hint')}</div>
                                     )}
                                 </div>
 
-                                {/* Bar chart: by type hours */}
                                 <div className="glass-card p-6">
-                                    <h2 className="font-display font-semibold text-text-primary mb-4">Hours by Type</h2>
+                                    <h2 className="font-display font-semibold text-text-primary mb-4">{t('hours_by_type')}</h2>
                                     {typeChartData.length > 0 ? (
                                         <ResponsiveContainer width="100%" height={260}>
                                             <BarChart data={typeChartData}>
@@ -269,21 +274,20 @@ export default function DashboardPage() {
                                             </BarChart>
                                         </ResponsiveContainer>
                                     ) : (
-                                        <div className="h-[260px] flex items-center justify-center text-text-muted text-sm">Add media to see chart</div>
+                                        <div className="h-[260px] flex items-center justify-center text-text-muted text-sm">{t('add_media_hint')}</div>
                                     )}
                                 </div>
                             </div>
 
-                            {/* Yearly Chart */}
                             {yearlyChartData.length > 0 && (
                                 <div className="glass-card p-6 mb-6">
-                                    <h2 className="font-display font-semibold text-text-primary mb-4">Yearly Consumption</h2>
+                                    <h2 className="font-display font-semibold text-text-primary mb-4">{t('yearly_consumption')}</h2>
                                     <ResponsiveContainer width="100%" height={220}>
                                         <BarChart data={yearlyChartData}>
                                             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                                             <XAxis dataKey="year" tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} />
                                             <YAxis tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} tickFormatter={v => `${Math.round(v / 60)}h`} />
-                                            <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8 }} formatter={(v: number) => [`${Math.round(v / 60 * 10) / 10}h`, 'Total time']} labelStyle={{ color: 'var(--text-secondary)' }} />
+                                            <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8 }} formatter={(v: number) => [`${Math.round(v / 60 * 10) / 10}h`, t('total_time')]} labelStyle={{ color: 'var(--text-secondary)' }} />
                                             <Bar dataKey="minutes" fill="url(#yearGrad)" radius={[4, 4, 0, 0]} />
                                             <defs>
                                                 <linearGradient id="yearGrad" x1="0" y1="0" x2="0" y2="1">
@@ -296,10 +300,9 @@ export default function DashboardPage() {
                                 </div>
                             )}
 
-                            {/* Status breakdown */}
                             {statusData.length > 0 && (
                                 <div className="glass-card p-6">
-                                    <h2 className="font-display font-semibold text-text-primary mb-4">Status Overview</h2>
+                                    <h2 className="font-display font-semibold text-text-primary mb-4">{t('status_overview')}</h2>
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                         {statusData.map(({ name, value }) => (
                                             <div key={name} className={`rounded-xl p-4 text-center status-${name}`} style={{ background: `${STATUS_COLORS[name]}12` }}>
@@ -314,21 +317,20 @@ export default function DashboardPage() {
                             {analytics?.overview.totalItems === 0 && (
                                 <div className="text-center py-20 glass-card">
                                     <Film size={48} className="text-text-muted mx-auto mb-4" />
-                                    <h3 className="font-display text-lg font-semibold text-text-primary mb-2">Your library is empty</h3>
-                                    <p className="text-text-secondary text-sm mb-6">Start adding anime, movies, shows and games to see your stats here.</p>
+                                    <h3 className="font-display text-lg font-semibold text-text-primary mb-2">{t('empty_library')}</h3>
+                                    <p className="text-text-secondary text-sm mb-6">{t('empty_library_desc')}</p>
                                     <a href="/search" className="btn-primary inline-flex items-center gap-2">
-                                        Add your first title
+                                        {t('add_first')}
                                     </a>
                                 </div>
                             )}
                         </div>
 
-                        {/* Friend Activity Sidebar */}
                         <div className="xl:col-span-1 space-y-6">
                             <div className="sticky top-24">
                                 <h2 className="font-display font-semibold text-text-primary mb-4 flex items-center gap-2">
                                     <Users size={20} className="text-accent-cyan" />
-                                    Friend Activity
+                                    {t('friend_activity')}
                                 </h2>
                                 <div className="bg-bg-card rounded-2xl border border-border p-4 shadow-lg h-[800px] overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
                                     <ActivityFeed filter="following" />

@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { Navbar } from '@/components/Navbar'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Users } from 'lucide-react'
 
 export default async function FollowersPage({ params }: { params: { username: string } }) {
@@ -29,7 +30,7 @@ export default async function FollowersPage({ params }: { params: { username: st
                 <div className="flex items-center gap-3 mb-8">
                     <Users className="text-accent-purple" size={32} />
                     <h1 className="text-3xl font-display font-bold text-text-primary">
-                        {user.name || user.username}'s Followers
+                        {user.name || user.username}&apos;s Followers
                     </h1>
                 </div>
 
@@ -37,7 +38,15 @@ export default async function FollowersPage({ params }: { params: { username: st
                     {user.followers.map(f => (
                         <Link key={f.follower.id} href={`/user/${f.follower.username || f.follower.id}`} className="glass-card p-4 rounded-xl flex items-center gap-4 border border-border/50 hover:border-accent-purple hover:-translate-y-0.5 transition-all">
                             {f.follower.image ? (
-                                <img src={f.follower.image} alt={f.follower.name || ''} className="w-12 h-12 rounded-full object-cover border border-border" />
+                                <div className="relative w-12 h-12 shrink-0 overflow-hidden rounded-full border border-border">
+                                    <Image 
+                                        src={f.follower.image} 
+                                        alt={f.follower.name || ''} 
+                                        fill
+                                        sizes="48px"
+                                        className="object-cover" 
+                                    />
+                                </div>
                             ) : (
                                 <div className="w-12 h-12 rounded-full bg-bg-secondary border border-border flex items-center justify-center font-bold text-xl text-accent-purple">
                                     {f.follower.name?.[0]?.toUpperCase() || f.follower.username?.[0]?.toUpperCase()}

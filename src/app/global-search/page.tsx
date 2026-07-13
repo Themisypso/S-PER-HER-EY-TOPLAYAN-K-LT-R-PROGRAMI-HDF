@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Navbar } from '@/components/Navbar'
 import { PosterCard } from '@/components/PosterCard'
 import { getServerSession } from 'next-auth'
@@ -13,10 +14,13 @@ async function searchGlobalAPI(query: string) {
     // Make sure we use an absolute URL when fetching in Server Components
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
     try {
-        const res = await fetch(`${baseUrl}/api/tmdb/search?q=${encodeURIComponent(query)}&type=multi`, { next: { revalidate: 300 } })
+        const res = await fetch(`${baseUrl}/api/tmdb/search?q=${encodeURIComponent(query)}&type=multi&includeExternal=true`, { next: { revalidate: 300 } })
         if (!res.ok) return []
         const data = await res.json()
-        return data.results || []
+        if (data.success && data.data) {
+            return data.data || []
+        }
+        return []
     } catch (e) {
         console.error('[GlobalSearch Page Fetching Error]', e)
         return []
@@ -130,7 +134,15 @@ export default async function GlobalSearchPage({ searchParams }: { searchParams:
                                     return (
                                         <Link key={u.id} href={`/user/${profileSlug}`} className="glass-card p-5 rounded-2xl border border-border hover:border-[#a855f7] transition-all group flex items-start gap-4">
                                             {u.image ? (
-                                                <img src={u.image} alt={displayName} className="w-14 h-14 rounded-full object-cover group-hover:scale-105 transition-transform" />
+                                                <div className="relative w-14 h-14 shrink-0 overflow-hidden rounded-full">
+                                                    <Image 
+                                                        src={u.image} 
+                                                        alt={displayName} 
+                                                        fill
+                                                        sizes="56px"
+                                                        className="object-cover group-hover:scale-105 transition-transform" 
+                                                    />
+                                                </div>
                                             ) : (
                                                 <div className="w-14 h-14 rounded-full bg-bg-secondary flex items-center justify-center font-bold text-xl group-hover:scale-105 transition-transform text-white/50">
                                                     {displayName[0]?.toUpperCase()}
@@ -254,10 +266,16 @@ export default async function GlobalSearchPage({ searchParams }: { searchParams:
                             </h2>
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
                                 {people.map((p: any) => (
-                                    <Link key={p.id} href={`/person/${p.id}`} className="group flex flex-col items-center">
+                                    <Link key={p.id} href={`/person/${p.id}`} className="group flex flex-col items-center text-center">
                                         <div className="relative w-32 h-32 rounded-full overflow-hidden mb-3 border-4 border-bg-card shadow-xl bg-bg-secondary group-hover:border-[#ff3264] transition-colors">
                                             {p.posterUrl ? (
-                                                <img src={p.posterUrl} alt={p.title} className="w-full h-full object-cover object-top p-1 rounded-full group-hover:scale-105 transition-transform duration-300" />
+                                                <Image 
+                                                    src={p.posterUrl} 
+                                                    alt={p.title} 
+                                                    fill
+                                                    sizes="128px"
+                                                    className="object-cover object-top p-1 rounded-full group-hover:scale-105 transition-transform duration-300" 
+                                                />
                                             ) : (
                                                 <div className="flex items-center justify-center h-full font-bold text-2xl text-text-muted text-center">{p.title[0]}</div>
                                             )}

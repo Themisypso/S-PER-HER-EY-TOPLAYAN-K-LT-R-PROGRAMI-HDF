@@ -1,0 +1,33 @@
+{
+  "Navbar": {
+    "dashboard": "ダッシュボード",
+    "explore": "見つける",
+    "library": "ライブラリ",
+    "trending": "トレンド",
+    "global_search": "検索...",
+    "login": "ログイン",
+    "register": "登録",
+    "my_profile": "マイプロファイル",
+    "settings": "設定",
+    "manage_friends": "友達を管理",
+    "admin_panel": "管理パネル",
+    "logout": "ログアウト"
+  },
+  "Dashboard": {
+    "title": "ダッシュボード",
+    "welcome": "ようこそ",
+    "total_time": "合計時間",
+    "watching": "視聴中",
+    "planned": "予定",
+    "completed": "完了",
+    "recently_watched": "最近見たもの",
+    "activity_feed": "アクティビティ"
+  },
+  "Settings": {
+    "title": "プロファイル設定",
+    "subtitle": "ネットワーク全体の公開プロフィール、接続、プライバシー設定を管理します。",
+    "general": "一般",
+    "security": "セキュリティ",
+    "integrations": "連携"
+  }
+}

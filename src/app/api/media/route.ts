@@ -6,6 +6,8 @@ import { prisma } from '@/lib/prisma'
 import { revalidateTag } from 'next/cache'
 import { z } from 'zod'
 import { calcTotalTime } from '@/lib/utils/media'
+import { MediaType, MediaStatus } from '@prisma/client'
+import * as api from '@/lib/api'
 
 const mediaSchema = z.object({
     title: z.string().min(1),
@@ -15,6 +17,7 @@ const mediaSchema = z.object({
     imdbId: z.string().optional().nullable(),
     rawgId: z.string().optional().nullable(),
     bookId: z.string().optional().nullable(),
+    steamAppId: z.string().optional().nullable(),
     posterUrl: z.string().optional().nullable(),
     backdropUrl: z.string().optional().nullable(),
     genres: z.array(z.string()).optional().default([]),
@@ -31,19 +34,19 @@ const mediaSchema = z.object({
 
 export async function GET(req: Request) {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session?.user?.id) return api.unauthorized()
 
     const { searchParams } = new URL(req.url)
     const type = searchParams.get('type')
     const status = searchParams.get('status')
     const cursor = searchParams.get('cursor') ?? undefined
-    const limit = Math.min(parseInt(searchParams.get('limit') ?? '48', 10), 100)
+    const limit = Math.min(parseInt(searchParams.get('limit') ?? '48', 10), 1000)
 
     const items = await prisma.mediaItem.findMany({
         where: {
             userId: session.user.id,
-            ...(type ? { type: type as any } : {}),
-            ...(status ? { status: status as any } : {}),
+            ...(type ? { type: type as MediaType } : {}),
+            ...(status ? { status: status as MediaStatus } : {}),
         },
         orderBy: { updatedAt: 'desc' },
         take: limit + 1,
@@ -54,12 +57,12 @@ export async function GET(req: Request) {
     const page = hasMore ? items.slice(0, limit) : items
     const nextCursor = hasMore ? page[page.length - 1].id : null
 
-    return NextResponse.json({ items: page, hasMore, nextCursor })
+    return api.ok({ items: page, hasMore, nextCursor })
 }
 
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session?.user?.id) return api.unauthorized()
 
     try {
         const body = await req.json()
@@ -83,6 +86,11 @@ export async function POST(req: Request) {
                 where: { userId: session.user.id, bookId: data.bookId },
             })
             if (existing) existingId = existing.id;
+        } else if (data.steamAppId) {
+            const existing = await prisma.mediaItem.findFirst({
+                where: { userId: session.user.id, steamAppId: data.steamAppId },
+            })
+            if (existing) existingId = existing.id;
         }
 
         if (existingId) {
@@ -101,7 +109,7 @@ export async function POST(req: Request) {
                 }
             }).catch(e => console.error('[ACTIVITY ERROR]', e))
 
-            return NextResponse.json({ item: updated }, { status: 200 })
+            return api.ok(updated)
         }
 
         let finalData = { ...data }
@@ -133,6 +141,7 @@ export async function POST(req: Request) {
                 genres: finalData.genres ?? [],
                 rawgId: finalData.rawgId ?? null,
                 bookId: finalData.bookId ?? null,
+                steamAppId: finalData.steamAppId ?? null,
             },
         })
 
@@ -149,12 +158,12 @@ export async function POST(req: Request) {
         // Invalidate homepage cache so new items appear immediately
         revalidateTag('landing-data')
 
-        return NextResponse.json({ item }, { status: 201 })
+        return api.created(item)
     } catch (error) {
         if (error instanceof z.ZodError) {
-            return NextResponse.json({ error: error.errors[0].message }, { status: 400 })
+            return api.badRequest(error.errors[0].message)
         }
         console.error('[MEDIA CREATE ERROR]', error)
-        return NextResponse.json({ error: 'Failed to create media item' }, { status: 500 })
+        return api.serverError('Failed to create media item')
     }
 }

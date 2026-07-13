@@ -1,6 +1,7 @@
 'use client'
 
 import { useMediaFavorites } from '@/hooks/useMediaFavorites'
+import Image from 'next/image'
 import Link from 'next/link'
 import { Gamepad2, Heart } from 'lucide-react'
 
@@ -21,7 +22,15 @@ export function ExploreGameCard({ id, slug, title, posterUrl, releaseYear, metac
         <Link href={`/games/${slug}`} className="group block">
             <div className="aspect-[16/10] rounded-xl overflow-hidden bg-bg-secondary border border-border group-hover:border-[#00ff9d]/50 transition-colors mb-2 relative">
                 {posterUrl
-                    ? <img src={posterUrl} alt={title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    ? (
+                        <Image 
+                            src={posterUrl} 
+                            alt={title} 
+                            fill 
+                            sizes="(max-width: 640px) 250px, (max-width: 1024px) 300px, 350px"
+                            className="object-cover group-hover:scale-105 transition-transform duration-300" 
+                        />
+                    )
                     : <div className="flex items-center justify-center h-full"><Gamepad2 size={24} className="text-text-muted opacity-50" /></div>}
 
                 {metacritic && (

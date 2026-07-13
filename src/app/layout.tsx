@@ -4,6 +4,8 @@ import { Providers } from '@/components/Providers'
 import { Toaster } from 'react-hot-toast'
 import NextTopLoader from 'nextjs-toploader'
 import { Footer } from '@/components/Footer'
+import { NextIntlClientProvider } from 'next-intl'
+import { getLocale, getMessages } from 'next-intl/server'
 
 export const metadata: Metadata = {
     title: 'Themis Media Tracker',
@@ -17,16 +19,19 @@ export const metadata: Metadata = {
     },
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+    const locale = await getLocale()
+    const messages = await getMessages()
+
     return (
-        <html lang="en" suppressHydrationWarning>
+        <html lang={locale} suppressHydrationWarning>
             <head>
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
                 <meta name="viewport" content="width=device-width, initial-scale=1" />
                 <link rel="icon" href="/favicon.ico" />
             </head>
-            <body>
+            <body className="bg-bg-primary text-text-primary antialiased min-h-screen">
                 <NextTopLoader
                     color="#7b2fff"
                     initialPosition={0.08}
@@ -38,11 +43,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     speed={200}
                     shadow="0 0 10px #7b2fff,0 0 5px #7b2fff"
                 />
-                <Providers>
-                    {children}
-                    <Footer />
-                    <Toaster
-                        position="bottom-right"
+                <NextIntlClientProvider messages={messages}>
+                    <Providers>
+                        {children}
+                        <Footer />
+                        <Toaster
+                            position="bottom-right"
                         toastOptions={{
                             style: {
                                 background: '#111827',
@@ -55,6 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         }}
                     />
                 </Providers>
+                </NextIntlClientProvider>
             </body>
         </html>
     )

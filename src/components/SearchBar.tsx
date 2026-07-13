@@ -57,10 +57,14 @@ export function SearchBar({ onSelect, placeholder = 'Search anime, movies, shows
         debounceRef.current = setTimeout(async () => {
             setLoading(true)
             try {
-                const res = await fetch(`/api/tmdb/search?q=${encodeURIComponent(query)}`)
-                const data = await res.json()
-                setResults(data.results || [])
-                setOpen(true)
+                const res = await fetch(`/api/tmdb/search?q=${encodeURIComponent(query)}&includeExternal=true`)
+                const response = await res.json()
+                if (response.success && response.data) {
+                    setResults(response.data || [])
+                    setOpen(true)
+                } else {
+                    setResults([])
+                }
             } catch { }
             setLoading(false)
         }, 350)
@@ -118,7 +122,15 @@ export function SearchBar({ onSelect, placeholder = 'Search anime, movies, shows
                             className="w-full flex items-center gap-3 px-3 py-3 hover:bg-bg-hover transition-colors text-left border-b border-border last:border-0"
                         >
                             {result.posterUrl ? (
-                                <img src={result.posterUrl} alt={result.title} className="w-10 h-14 object-cover rounded flex-shrink-0" style={{ minWidth: 40 }} />
+                                <div className="relative w-10 h-14 flex-shrink-0">
+                                    <Image 
+                                        src={result.posterUrl} 
+                                        alt={result.title} 
+                                        fill
+                                        sizes="40px"
+                                        className="object-cover rounded" 
+                                    />
+                                </div>
                             ) : (
                                 <div className="w-10 h-14 bg-bg-hover rounded flex-shrink-0 flex items-center justify-center">
                                     <Film size={16} className="text-text-muted" />

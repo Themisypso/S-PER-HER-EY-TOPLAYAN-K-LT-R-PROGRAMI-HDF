@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { Navbar } from '@/components/Navbar'
 import Link from 'next/link'
+import Image from 'next/image'
 import { MessageSquare, Users, TrendingUp, Clock, Film, Tv, Gamepad2, BookOpen, Clapperboard } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -101,9 +102,15 @@ export default async function DiscussionsPage({
                                     className="flex items-stretch gap-4 glass-card p-4 rounded-2xl border border-border/40 hover:border-accent-cyan/40 transition-all group bg-bg-card/40 backdrop-blur-sm hover:bg-bg-card/60"
                                 >
                                     {/* Poster thumbnail */}
-                                    <div className="w-12 h-16 rounded-lg overflow-hidden shrink-0 bg-bg-secondary border border-border/50 flex items-center justify-center">
+                                    <div className="w-12 h-16 rounded-lg overflow-hidden shrink-0 bg-bg-secondary border border-border/50 flex items-center justify-center relative">
                                         {thread.mediaPosterUrl ? (
-                                            <img src={thread.mediaPosterUrl} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                            <Image 
+                                                src={thread.mediaPosterUrl} 
+                                                alt="" 
+                                                fill
+                                                sizes="48px"
+                                                className="object-cover group-hover:scale-105 transition-transform" 
+                                            />
                                         ) : (
                                             <TypeIcon size={20} className="text-text-muted" />
                                         )}
@@ -130,7 +137,15 @@ export default async function DiscussionsPage({
                                             {thread.author && (
                                                 <span className="flex items-center gap-1.5">
                                                     {thread.author.image ? (
-                                                        <img src={thread.author.image} alt="" className="w-4 h-4 rounded-full" />
+                                                        <div className="relative w-4 h-4 shrink-0 overflow-hidden rounded-full">
+                                                            <Image 
+                                                                src={thread.author.image} 
+                                                                alt="" 
+                                                                fill
+                                                                sizes="16px"
+                                                                className="object-cover" 
+                                                            />
+                                                        </div>
                                                     ) : (
                                                         <div className="w-4 h-4 rounded-full bg-bg-secondary" />
                                                     )}

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Film, Tv, Clapperboard, Gamepad2 } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 
 interface MediaItem {
     id: string
@@ -77,12 +78,14 @@ export function ThisWeekInMedia({ movies, tvShows, anime, games }: Props) {
                             href={mediaHref(item)}
                             className="group relative rounded-xl overflow-hidden border border-border/40 hover:border-accent-cyan/40 transition-all shadow-sm hover:shadow-md"
                         >
-                            <div className="aspect-[2/3] bg-bg-secondary">
+                            <div className="aspect-[2/3] bg-bg-secondary relative">
                                 {item.posterUrl ? (
-                                    <img
+                                    <Image
                                         src={item.posterUrl}
                                         alt={item.title || ''}
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                        fill
+                                        sizes="(max-width: 640px) 25vw, (max-width: 1024px) 15vw, 10vw"
+                                        className="object-cover group-hover:scale-105 transition-transform duration-300"
                                     />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-text-muted">

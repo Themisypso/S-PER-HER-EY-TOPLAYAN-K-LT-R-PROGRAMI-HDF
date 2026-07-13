@@ -11,6 +11,10 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// ============================================================
+// AUTH (NextAuth)
+// ============================================================
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -24,11 +28,23 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  // Extended profile fields (per spec)
+  avatarUrl String?
+  bio       String? @db.Text
+
+  // Integration fields
+  malUsername     String?
+  malAccessToken  String?  @db.Text
+  malRefreshToken String?  @db.Text
+  anilistUsername String?
+  anilistToken    String?  @db.Text
+  tmdbSessionId   String?
+
   accounts   Account[]
   sessions   Session[]
   mediaItems MediaItem[]
 
-  // New Relational Links
+  // Settings & profile
   settings         UserSettings?
   followers        Follows[]        @relation("followers")
   following        Follows[]        @relation("following")
@@ -55,8 +71,14 @@ model User {
   notifications   Notification[] @relation("UserNotifications")
   triggeredNotifs Notification[] @relation("ActorNotifications")
 
-  // Discussions authored
+  // Discussions
   discussionThreads DiscussionThread[] @relation("ThreadAuthor")
+
+  // New social models
+  likes       Like[]
+  discussions Discussion[]
+
+  @@index([username])
 }
 
 model Account {
@@ -94,60 +116,9 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model MediaItem {
-  id     String      @id @default(cuid())
-  userId String
-  title  String
-  type   MediaType
-  status MediaStatus @default(PLANNED)
-
-  // TMDB / External IDs
-  tmdbId     String?
-  imdbId     String?
-  rawgId     String? // RAWG game ID (slug)
-  bookId     String? // Google Books volumeId
-  steamAppId String? // Steam App ID for games
-
-  // Media metadata
-  posterUrl   String?
-  backdropUrl String?
-  genres      String[]
-  releaseYear Int?
-  overview    String?  @db.Text
-  tmdbRating  Float?
-
-  // Time tracking
-  runtime              Int? // minutes (movies/episodes)
-  episodeCount         Int? // anime/TV shows
-  episodeDuration      Int? // minutes per episode
-  playtimeHours        Float? // games (manual)
-  steamPlaytimeMinutes Int? // games (steam sync)
-  totalTimeMinutes     Int? // computed: episodes*duration or runtime or playtime*60
-
-  // User data
-  userRating Int? // 1-10
-  notes      String? @db.Text
-
-  // Progress tracking
-  progress       Int? // Current minute, page, or episode
-  pageCount      Int? // For books
-  lastProgressAt DateTime? // Timestamp of last progress update
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  isFeatured Boolean @default(false)
-
-  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  activities        Activity[]
-  quotes            Quote[]
-  discussionThreads DiscussionThread[]
-
-  @@unique([userId, tmdbId])
-  @@index([userId])
-  @@index([type])
-  @@index([status])
-}
+// ============================================================
+// ENUMS
+// ============================================================
 
 enum MediaType {
   ANIME
@@ -191,6 +162,12 @@ enum ActivityType {
   BOOK_COMPLETED
   FAVORITED_PERSON
   LIST_CREATED
+  // New activity types per spec
+  WATCH
+  RATING
+  LIST
+  DISCUSSION
+  FAVORITE
 }
 
 enum ReportTargetType {
@@ -207,6 +184,155 @@ enum ReportStatus {
   DISMISSED
 }
 
+enum AttachmentType {
+  NONE
+  IMAGE
+  GIF
+  VIDEO
+}
+
+enum NotificationType {
+  LIKE_QUOTE
+  LIKE_LIST
+  LIKE_COMMENT
+  LIKE_DISCUSSION
+  COMMENT_QUOTE
+  COMMENT_DISCUSSION
+  MENTION
+  REPLY
+  FOLLOW
+}
+
+// ============================================================
+// CORE MEDIA CATALOGUE (shared, not per-user)
+// ============================================================
+
+/// Unified external media catalogue. Not per-user — shared across all users.
+/// Source examples: tmdb, rawg, googlebooks, manual
+/// Type examples: movie, tv, anime, game, book
+model Media {
+  id            String    @id @default(cuid())
+  externalId    String?
+  source        String // "tmdb" | "rawg" | "googlebooks" | "manual"
+  type          String // "movie" | "tv" | "anime" | "game" | "book"
+  title         String
+  originalTitle String?
+  description   String?   @db.Text
+  posterUrl     String?
+  backdropUrl   String?
+  releaseDate   DateTime?
+  runtime       Int?
+  popularity    Float?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  genres      MediaGenre[]
+  mediaItems  MediaItem[]
+  listItems   ListItem[]
+  discussions Discussion[]
+  stats       MediaStats?
+
+  @@index([externalId])
+  @@index([type])
+}
+
+// ============================================================
+// GENRES (normalized)
+// ============================================================
+
+model Genre {
+  id   String @id @default(cuid())
+  name String @unique
+
+  media MediaGenre[]
+}
+
+model MediaGenre {
+  mediaId String
+  genreId String
+
+  media Media @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  genre Genre @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([mediaId, genreId])
+  @@index([mediaId])
+  @@index([genreId])
+}
+
+// ============================================================
+// USER LIBRARY (tracking system)
+// ============================================================
+
+/// Per-user media tracking. Mapped to "user_media" table.
+/// Prisma model name kept as MediaItem for API backward-compatibility.
+model MediaItem {
+  id     String      @id @default(cuid())
+  userId String
+  title  String
+  type   MediaType
+  status MediaStatus @default(PLANNED)
+
+  // TMDB / External IDs
+  tmdbId     String?
+  imdbId     String?
+  rawgId     String? // RAWG game ID (slug)
+  bookId     String? // Google Books volumeId
+  steamAppId String? // Steam App ID for games
+
+  // Optional link to shared Media catalogue
+  mediaId String?
+
+  // Media metadata
+  posterUrl   String?
+  backdropUrl String?
+  genres      String[]
+  releaseYear Int?
+  overview    String?  @db.Text
+  tmdbRating  Float?
+
+  // Time tracking
+  runtime              Int? // minutes (movies/episodes)
+  episodeCount         Int? // anime/TV shows
+  episodeDuration      Int? // minutes per episode
+  playtimeHours        Float? // games (manual)
+  steamPlaytimeMinutes Int? // games (steam sync)
+  totalTimeMinutes     Int? // computed
+
+  // User data
+  userRating Int? // 1-10
+  notes      String? @db.Text
+
+  // Progress tracking
+  progress       Int? // Current minute, page, or episode
+  pageCount      Int? // For books
+  lastProgressAt DateTime? // Timestamp of last progress update
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  isFeatured   Boolean  @default(false)
+  isSpoiler    Boolean  @default(false)
+  originalLang String?
+
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  media             Media?             @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+  activities        Activity[]
+  quotes            Quote[]
+  discussionThreads DiscussionThread[]
+
+  @@unique([userId, tmdbId])
+  @@index([userId])
+  @@index([tmdbId])
+  @@index([mediaId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+  @@map("user_media")
+}
+
+// ============================================================
+// USER SETTINGS
+// ============================================================
+
 model UserSettings {
   id     String @id @default(cuid())
   userId String @unique
@@ -222,12 +348,16 @@ model UserSettings {
   hideActivity     Boolean @default(false)
   showSteamProfile Boolean @default(true)
 
-  language String @default("EN") // TR, EN
+  language String @default("system") // system, tr, en, de, etc.
   theme    Theme  @default(DARK)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+// ============================================================
+// SOCIAL GRAPH
+// ============================================================
 
 model Follows {
   follower    User     @relation("following", fields: [followerId], references: [id], onDelete: Cascade)
@@ -241,6 +371,10 @@ model Follows {
   @@index([followingId])
 }
 
+// ============================================================
+// ACTIVITY FEED
+// ============================================================
+
 model Activity {
   id     String @id @default(cuid())
   userId String
@@ -248,16 +382,26 @@ model Activity {
 
   type ActivityType
 
-  mediaId String? // Reference context
+  mediaId String? // Reference to user's MediaItem
   media   MediaItem? @relation(fields: [mediaId], references: [id], onDelete: SetNull)
 
-  referenceId String? // For non-media references (e.g., person ID)
-  content     String?  @db.Text
-  createdAt   DateTime @default(now())
+  // Polymorphic reference fields
+  referenceId String? // Legacy: for non-media references (e.g., person ID)
+  targetId    String? // New: polymorphic target ID
+  targetType  String? // New: "media" | "quote" | "list" | "discussion"
+
+  content      String?  @db.Text
+  originalLang String?
+  createdAt    DateTime @default(now())
 
   @@index([userId])
+  @@index([mediaId])
   @@index([createdAt])
 }
+
+// ============================================================
+// QUOTES
+// ============================================================
 
 model Quote {
   id     String @id @default(cuid())
@@ -269,8 +413,17 @@ model Quote {
 
   content        String         @db.Text
   reference      String? // e.g., "Page 42" or "1:24:00"
-  mediaUrl       String? // Cloudinary/Supabase URL for attached image/video
+  mediaUrl       String? // Legacy: Cloudinary/Supabase URL
   attachmentType AttachmentType @default(NONE)
+
+  // New media attachment fields per spec
+  imageUrl     String?
+  gifUrl       String?
+  videoUrl     String?
+  originalLang String?
+
+  // Denormalized like count for fast sorting
+  likesCount Int @default(0)
 
   isFeatured Boolean @default(false)
 
@@ -282,7 +435,96 @@ model Quote {
 
   @@index([userId])
   @@index([mediaId])
+  @@index([likesCount])
+  @@index([createdAt])
 }
+
+// ============================================================
+// LISTS
+// ============================================================
+
+model List {
+  id          String  @id @default(cuid())
+  userId      String
+  title       String
+  description String? @db.Text
+  isPublic    Boolean @default(true) // Legacy field kept for API compat
+  isFeatured  Boolean @default(false)
+  isSpoiler   Boolean @default(false)
+
+  // New visibility field per spec
+  visibility   String  @default("public") // "public" | "private" | "friends"
+  originalLang String?
+
+  // Denormalized like count
+  likesCount Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items ListItem[]
+  likes ListLike[]
+
+  @@index([userId])
+  @@index([likesCount])
+  @@index([createdAt])
+}
+
+model ListItem {
+  id         String   @id @default(cuid())
+  listId     String
+  title      String
+  posterUrl  String?
+  order      Int      @default(0) // Legacy order field
+  orderIndex Int      @default(0) // New alias per spec
+  createdAt  DateTime @default(now())
+
+  // Legacy external ID fields (kept for API compat)
+  tmdbId    String?
+  rawgId    String?
+  bookId    String?
+  mediaType String // "MOVIE", "TVSHOW", "ANIME", "GAME", "BOOK"
+
+  // New FK to shared Media catalogue (optional)
+  mediaId String?
+  media   Media?  @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+
+  list List @relation(fields: [listId], references: [id], onDelete: Cascade)
+
+  @@index([listId])
+  @@index([mediaId])
+}
+
+// ============================================================
+// DISCUSSIONS (new — separate from legacy DiscussionThread)
+// ============================================================
+
+/// New media discussion model per spec.
+/// Separate from DiscussionThread which powers existing discussion routes.
+model Discussion {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Can be linked to the new shared Media catalogue
+  mediaId String?
+  media   Media?  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  content      String  @db.Text
+  likesCount   Int     @default(0)
+  originalLang String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([mediaId])
+  @@index([createdAt])
+}
+
+// ============================================================
+// REPORTS
+// ============================================================
 
 model Report {
   id         String @id @default(cuid())
@@ -301,6 +543,10 @@ model Report {
   @@index([status])
   @@index([targetType, targetId])
 }
+
+// ============================================================
+// PEOPLE FAVORITES
+// ============================================================
 
 model FavoritePerson {
   id                 String   @id @default(cuid())
@@ -331,9 +577,9 @@ model FavoriteMedia {
   @@index([userId])
 }
 
-// -----------------------------------------
+// ============================================================
 // FRIEND SYSTEM
-// -----------------------------------------
+// ============================================================
 
 enum FriendRequestStatus {
   PENDING
@@ -371,9 +617,9 @@ model Friendship {
   @@index([user2Id])
 }
 
-// -----------------------------------------
-// SHARED LIBRARY
-// -----------------------------------------
+// ============================================================
+// SHARED LIBRARY SESSIONS
+// ============================================================
 
 model SharedSession {
   id        String   @id @default(cuid())
@@ -402,48 +648,9 @@ model SharedSessionParticipant {
   @@index([sessionId])
 }
 
-// -----------------------------------------
-// LISTS
-// -----------------------------------------
-
-model List {
-  id          String  @id @default(cuid())
-  userId      String
-  title       String
-  description String? @db.Text
-  isPublic    Boolean @default(true)
-  isFeatured  Boolean @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items ListItem[]
-  likes ListLike[]
-
-  @@index([userId])
-}
-
-model ListItem {
-  id        String   @id @default(cuid())
-  listId    String
-  tmdbId    String?
-  rawgId    String?
-  bookId    String?
-  mediaType String // "MOVIE", "TVSHOW", "ANIME", "GAME", "BOOK"
-  title     String
-  posterUrl String?
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
-
-  list List @relation(fields: [listId], references: [id], onDelete: Cascade)
-
-  @@index([listId])
-}
-
-// -----------------------------------------
+// ============================================================
 // SOCIAL INTERACTIONS (Likes & Comments)
-// -----------------------------------------
+// ============================================================
 
 model QuoteLike {
   id        String   @id @default(cuid())
@@ -489,9 +696,10 @@ model Comment {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  content   String   @db.Text
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  content      String   @db.Text
+  originalLang String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Threaded replies
   parentId String?
@@ -510,11 +718,30 @@ model Comment {
   @@index([quoteId])
   @@index([discussionThreadId])
   @@index([parentId])
+  @@index([createdAt])
 }
 
-// -----------------------------------------
-// DISCUSSIONS
-// -----------------------------------------
+// ============================================================
+// UNIVERSAL LIKE SYSTEM (polymorphic)
+// ============================================================
+
+/// Universal polymorphic like. targetType: "quote" | "discussion" | "list" | "comment"
+model Like {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetId   String
+  targetType String // "quote" | "discussion" | "list" | "comment"
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, targetId, targetType])
+  @@index([targetId, targetType])
+  @@index([userId])
+}
+
+// ============================================================
+// LEGACY DISCUSSIONS (kept for all existing routes)
+// ============================================================
 
 model DiscussionThread {
   id    String  @id @default(cuid())
@@ -532,9 +759,10 @@ model DiscussionThread {
   tmdbId String?
 
   // Denormalized media metadata for listing without joins
-  mediaTitle    String?
+  mediaTitle     String?
   mediaPosterUrl String?
   mediaType      String? // MOVIE, TVSHOW, ANIME, GAME, BOOK
+  originalLang   String?
 
   isFeatured Boolean @default(false)
 
@@ -549,25 +777,9 @@ model DiscussionThread {
   @@index([createdAt])
 }
 
-// -----------------------------------------
+// ============================================================
 // NOTIFICATIONS
-// -----------------------------------------
-
-enum AttachmentType {
-  NONE
-  IMAGE
-  VIDEO
-}
-
-enum NotificationType {
-  LIKE_QUOTE
-  LIKE_LIST
-  LIKE_COMMENT
-  COMMENT_QUOTE
-  COMMENT_DISCUSSION
-  MENTION
-  REPLY
-}
+// ============================================================
 
 model Notification {
   id     String @id @default(cuid())
@@ -578,28 +790,80 @@ model Notification {
   actor   User   @relation("ActorNotifications", fields: [actorId], references: [id], onDelete: Cascade)
 
   type        NotificationType
-  referenceId String? // ID of the quote, list, or comment
+  referenceId String? // Legacy: ID of the quote, list, or comment
+
+  // New polymorphic target fields per spec
+  targetId   String?
+  targetType String? // "quote" | "discussion" | "list" | "comment"
 
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
 
   @@index([userId, isRead])
   @@index([actorId])
+  @@index([userId])
 }
 
-// -----------------------------------------
+// ============================================================
+// MEDIA STATISTICS (trending engine)
+// ============================================================
+
+/// Aggregated stats per Media for homepage discovery & trending.
+model MediaStats {
+  mediaId         String @id
+  media           Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  views           Int    @default(0)
+  quotes          Int    @default(0)
+  discussions     Int    @default(0)
+  favorites       Int    @default(0)
+  listAppearances Int    @default(0)
+
+  // Trending & ranking fields
+  trendScore   Float   @default(0)
+  weeklyRank   Int? // e.g. 3 = Trending #3 (null = not ranked)
+  lastWeekRank Int? // previous week's rank (for delta calculation)
+  weeksInTop10 Int     @default(0) // consecutive weeks in the Top 10
+  rankType     String? // "movie" | "tv" | "anime" | "game" (null = unranked type)
+
+  updatedAt DateTime @updatedAt
+
+  @@index([trendScore])
+  @@index([weeklyRank])
+  @@index([rankType, weeklyRank])
+}
+
+// ============================================================
 // CMS / ADMIN
-// -----------------------------------------
+// ============================================================
 
 model FooterConfig {
-  id      String @id @default(cuid())
-  section String // "Product", "Community", "Company", "Social"
-  label   String // e.g., "About"
-  url     String // e.g., "/about"
-  order   Int    @default(0)
+  id          String  @id @default(cuid())
+  section     String // "Product", "Community", "Company", "Social"
+  label       String // e.g., "About"
+  url         String // e.g., "/about"
+  order       Int     @default(0)
+  socialLinks Json?   // {"twitter": "...", "github": "..."}
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([section])
 }
+
+
+// ============================================================
+// TRANSLATION CACHING
+// ============================================================
+
+model TranslationCache {
+  id           String   @id @default(cuid())
+  sourceHash   String   // Hash of the original text (for fast lookup)
+  sourceLang   String   
+  targetLang   String   
+  translated   String   @db.Text
+  createdAt    DateTime @default(now())
+
+  @@unique([sourceHash, targetLang])
+  @@index([sourceHash])
+}
+

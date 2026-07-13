@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
+import { getTmdbLang } from '@/lib/tmdb-lang'
 import { LRUCache } from 'lru-cache'
 
 const TMDB_BASE = 'https://api.themoviedb.org/3'
@@ -8,11 +9,13 @@ const API_KEY = process.env.TMDB_API_KEY
 const cache = new LRUCache<string, any>({ max: 500, ttl: 1000 * 60 * 30 })
 
 export async function GET(req: Request, { params }: { params: { id: string } }) {
+    const tmdbLang = getTmdbLang();
+
     const { searchParams } = new URL(req.url)
     const mediaType = searchParams.get('type') || 'movie' // movie or tv
     const { id } = params
 
-    const cacheKey = `details:${mediaType}:${id}`
+    const cacheKey = `details:${mediaType}:${id}:${tmdbLang}`
     if (cache.has(cacheKey)) {
         return NextResponse.json(cache.get(cacheKey))
     }
@@ -20,7 +23,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     try {
         // Fetch main details + external IDs in parallel
         const [detailsRes, externalRes] = await Promise.all([
-            fetch(`${TMDB_BASE}/${mediaType}/${id}?api_key=${API_KEY}&language=en-US&append_to_response=credits,genres`),
+            fetch(`${TMDB_BASE}/${mediaType}/${id}?api_key=${API_KEY}&language=${tmdbLang}&append_to_response=credits,genres`),
             fetch(`${TMDB_BASE}/${mediaType}/${id}/external_ids?api_key=${API_KEY}`),
         ])
 
